@@ -5,8 +5,9 @@ export function toggleThread(bubble: HTMLElement, comments: PRComment[]): void {
   const parent = bubble.closest('[data-line]') as HTMLElement | null;
   if (!parent) return;
 
-  const existing = parent.querySelector('.pr-thread');
-  if (existing) {
+  // Thread panel is inserted afterend (sibling), so check nextElementSibling not querySelector
+  const existing = parent.nextElementSibling;
+  if (existing?.classList.contains('pr-thread')) {
     existing.remove();
     return;
   }
