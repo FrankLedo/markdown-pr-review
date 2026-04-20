@@ -14,12 +14,21 @@ export function getGitContext(): GitContext {
     throw new Error('No workspace folder open.');
   }
 
-  const run = (cmd: string): string =>
-    execSync(cmd, { cwd: workspaceRoot, encoding: 'utf8' }).trim();
+  const run = (cmd: string, errorMsg: string): string => {
+    try {
+      return execSync(cmd, { cwd: workspaceRoot, encoding: 'utf8' }).trim();
+    } catch {
+      throw new Error(errorMsg);
+    }
+  };
 
-  const branch = run('git rev-parse --abbrev-ref HEAD');
-  const remoteUrl = run('git remote get-url origin');
-  const repoRoot = run('git rev-parse --show-toplevel');
+  const branch = run('git rev-parse --abbrev-ref HEAD', 'Not a git repository.');
+  if (branch === 'HEAD') {
+    throw new Error('Not on a branch — check out a PR branch first.');
+  }
+
+  const remoteUrl = run('git remote get-url origin', 'No git remote named "origin" found.');
+  const repoRoot = run('git rev-parse --show-toplevel', 'Not a git repository.');
 
   const { owner, repo } = parseGitHubRemote(remoteUrl);
   return { owner, repo, branch, repoRoot };
