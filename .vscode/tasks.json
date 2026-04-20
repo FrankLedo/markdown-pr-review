@@ -3,8 +3,8 @@
   "tasks": [
     {
       "label": "npm: compile",
-      "type": "shell",
-      "command": "arch -arm64 npm run compile",
+      "type": "npm",
+      "script": "compile",
       "group": {
         "kind": "build",
         "isDefault": true
