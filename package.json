@@ -4,8 +4,12 @@
   "description": "Overlay GitHub PR review comments on rendered markdown previews",
   "version": "0.0.1",
   "publisher": "frankledo",
-  "engines": { "vscode": "^1.85.0" },
-  "categories": ["Other"],
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
   "activationEvents": [],
   "main": "./dist/extension.js",
   "contributes": {
@@ -39,6 +43,7 @@
     "vscode:prepublish": "node esbuild.mjs --production"
   },
   "devDependencies": {
+    "@types/d3": "^7.4.3",
     "@types/markdown-it": "^14.1.0",
     "@types/node": "^20.11.0",
     "@types/vscode": "^1.85.0",
