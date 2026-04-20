@@ -31,6 +31,26 @@ const webviewConfig = {
     'process.env.NODE_ENV': production ? '"production"' : '"development"',
     'global': 'globalThis',
   },
+  external: [
+    'ts-dedent',
+    'd3',
+    'dompurify',
+    'khroma',
+    'cytoscape',
+    'dagre-d3-es',
+    'entities',
+    'mdurl',
+    'uc.micro',
+    'linkify-it',
+    'katex',
+    'dayjs',
+    'dayjs/plugin/isoWeek.js',
+    'dayjs/plugin/customParseFormat.js',
+    'dayjs/plugin/advancedFormat.js',
+    'elkjs',
+    'elkjs/lib/elk.bundled.js',
+    'mdast-util-from-markdown',
+  ],
 };
 
 if (watch) {
