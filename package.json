@@ -43,10 +43,8 @@
     "@types/node": "^20.11.0",
     "@types/vscode": "^1.85.0",
     "esbuild": "^0.20.0",
-    "typescript": "^5.3.0"
-  },
-  "dependencies": {
     "markdown-it": "^14.0.0",
-    "mermaid": "^10.6.0"
+    "mermaid": "^10.6.0",
+    "typescript": "^5.3.0"
   }
 }
