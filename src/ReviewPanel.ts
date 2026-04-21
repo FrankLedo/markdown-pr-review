@@ -125,7 +125,13 @@ export class ReviewPanel {
       opacity: 0.8;
     }
     .pr-thread-avatar { width: 20px; height: 20px; border-radius: 50%; }
-    .pr-thread-body { font-size: 13px; white-space: pre-wrap; word-break: break-word; }
+    .pr-thread-body { font-size: 13px; word-break: break-word; }
+    .pr-thread-body p { margin: 0.3em 0; }
+    .pr-thread-body p:first-child { margin-top: 0; }
+    .pr-thread-body p:last-child { margin-bottom: 0; }
+    .pr-thread-body code { background: var(--vscode-textCodeBlock-background, rgba(255,255,255,0.1)); padding: 1px 4px; border-radius: 3px; font-family: var(--vscode-editor-font-family); font-size: 12px; }
+    .pr-thread-body pre { background: var(--vscode-textCodeBlock-background, rgba(255,255,255,0.1)); padding: 8px; border-radius: 4px; overflow-x: auto; margin: 0.4em 0; }
+    .pr-thread-body pre code { background: none; padding: 0; }
     .mermaid { margin: 1em 0; }
   </style>
 </head>

@@ -67,7 +67,7 @@ function createBubble(thread: Thread): HTMLElement {
 
   bubble.addEventListener('click', (e) => {
     e.stopPropagation();
-    toggleThread(bubble, thread.comments);
+    toggleThread(bubble, thread.comments, thread.rootId);
   });
 
   return bubble;

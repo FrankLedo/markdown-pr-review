@@ -1,19 +1,21 @@
 import type { PRComment } from '../src/types';
+import { renderMarkdown } from './renderer';
 
-export function toggleThread(bubble: HTMLElement, comments: PRComment[]): void {
-  // If a thread panel is already open next to this bubble's anchor, close it
-  const parent = bubble.closest('[data-line]') as HTMLElement | null;
-  if (!parent) return;
-
-  // Thread panel is inserted afterend (sibling), so check nextElementSibling not querySelector
-  const existing = parent.nextElementSibling;
-  if (existing?.classList.contains('pr-thread')) {
+export function toggleThread(bubble: HTMLElement, comments: PRComment[], threadId: number): void {
+  // Use data-thread-for so each thread panel can be toggled independently,
+  // even when two threads share the same data-line anchor element.
+  const existing = document.querySelector(`[data-thread-for="${threadId}"]`);
+  if (existing) {
     existing.remove();
     return;
   }
 
+  const parent = bubble.closest('[data-line]') as HTMLElement | null;
+  if (!parent) return;
+
   const panel = document.createElement('div');
   panel.className = 'pr-thread';
+  panel.dataset.threadFor = String(threadId);
 
   for (const comment of comments) {
     const item = document.createElement('div');
@@ -42,7 +44,7 @@ export function toggleThread(bubble: HTMLElement, comments: PRComment[]): void {
 
     const body = document.createElement('div');
     body.className = 'pr-thread-body';
-    body.textContent = comment.body;
+    body.innerHTML = renderMarkdown(comment.body);
 
     item.appendChild(header);
     item.appendChild(body);
