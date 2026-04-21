@@ -51,11 +51,31 @@ const onReply: OnReply = (panel, rootId, line) => {
   panel.appendChild(box);
 };
 
-function onAddComment(anchor: HTMLElement, line: number): void {
-  // Remove any existing compose box immediately after this anchor
-  const next = anchor.nextElementSibling;
-  if (next?.classList.contains('pr-compose')) next.remove();
+function insertComposeAfter(anchor: HTMLElement, box: HTMLElement): void {
+  // A <div> inserted after a <li> inside an <ol>/<ul> is invalid HTML and Chrome
+  // renders it at an unpredictable position. Walk up through list structure until
+  // we reach a safe insertion point, then append inside that container element.
+  let el: HTMLElement = anchor;
+  while (el.parentElement) {
+    const parentTag = el.parentElement.tagName.toLowerCase();
+    if (parentTag === 'ol' || parentTag === 'ul') {
+      el = el.parentElement; // skip past the list — insert after the whole list
+      break;
+    }
+    if (parentTag === 'li') {
+      // append inside the <li> so the compose box is visually indented with the item
+      el.parentElement.querySelector('.pr-compose')?.remove();
+      el.parentElement.appendChild(box);
+      return;
+    }
+    break;
+  }
+  el.querySelector('.pr-compose')?.remove();
+  el.nextElementSibling?.classList.contains('pr-compose') && el.nextElementSibling.remove();
+  el.insertAdjacentElement('afterend', box);
+}
 
+function onAddComment(anchor: HTMLElement, line: number): void {
   const box = createComposeBox({
     hasDraft: () => draft.count > 0,
     onPostImmediately: (body) => {
@@ -74,7 +94,7 @@ function onAddComment(anchor: HTMLElement, line: number): void {
     onAddToDraft: (body) => { draft.add(line, body); },
     onCancel: () => {},
   });
-  anchor.insertAdjacentElement('afterend', box);
+  insertComposeAfter(anchor, box);
 }
 
 window.addEventListener('message', (event: MessageEvent<ExtensionMessage>) => {
