@@ -137,6 +137,7 @@ export function initSelectionHandlers(
     btn.style.top = `${rect.top + window.scrollY - 34}px`;
 
     btn.addEventListener('mousedown', (e) => e.preventDefault()); // keep selection
+    btn.addEventListener('mouseup', (e) => e.stopPropagation()); // prevent doc handler removing btn before click
     btn.addEventListener('click', () => {
       removeFloatBtn();
       onAddComment(resolved.anchor, resolved.line);
@@ -144,8 +145,8 @@ export function initSelectionHandlers(
     });
 
     document.body.appendChild(btn);
-    // Adjust left after append so offsetWidth is known
-    btn.style.left = `${rect.right - btn.offsetWidth}px`;
+    // Adjust left after append so offsetWidth is known; clamp to avoid going off-screen left
+    btn.style.left = `${Math.max(4, rect.right - btn.offsetWidth)}px`;
     floatBtn = btn;
   });
 
