@@ -15,7 +15,7 @@ Open a markdown file while on a PR branch, run a command, and see all PR review 
 
 1. User checks out the PR branch in their workspace.
 2. Opens a markdown file in the editor.
-3. Runs command **"Open PR Review"** from the command palette.
+3. Clicks the **"Open PR Review"** icon in the editor title bar (the icon row next to the file tabs, same location as the built-in markdown preview button), or right-clicks in the editor and selects "Open PR Review". Also available via command palette.
 4. VS Code prompts GitHub sign-in if not already authenticated.
 5. A webview panel opens beside the editor showing the rendered markdown with comment bubbles anchored to the commented lines.
 6. User clicks a bubble to expand the full thread inline.
