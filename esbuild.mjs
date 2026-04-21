@@ -1,10 +1,14 @@
 import * as esbuild from 'esbuild';
-import { mkdirSync } from 'fs';
+import { mkdirSync, copyFileSync } from 'fs';
 
 const production = process.argv.includes('--production');
 const watch = process.argv.includes('--watch');
 
 mkdirSync('dist', { recursive: true });
+
+// Copy pre-built mermaid browser bundle so the webview can load it as a plain
+// script tag, avoiding esbuild having to resolve lodash-es internals.
+copyFileSync('node_modules/mermaid/dist/mermaid.min.js', 'dist/mermaid.min.js');
 
 
 const extensionConfig = {
@@ -18,8 +22,9 @@ const extensionConfig = {
   minify: production,
 };
 
-// The webview runs in a browser iframe. markdown-it and mermaid are bundled
-// in so the webview has no external dependencies.
+// The webview runs in a browser iframe. mermaid is loaded separately as a plain
+// script (dist/mermaid.min.js) so esbuild doesn't have to resolve its deep
+// lodash-es dependency tree. Everything else (markdown-it, overlay, thread) is bundled.
 const webviewConfig = {
   entryPoints: ['webview/main.ts'],
   bundle: true,
@@ -28,6 +33,7 @@ const webviewConfig = {
   platform: 'browser',
   sourcemap: !production,
   minify: production,
+  external: ['mermaid'],
   define: {
     'process.env.NODE_ENV': production ? '"production"' : '"development"',
     'global': 'globalThis',

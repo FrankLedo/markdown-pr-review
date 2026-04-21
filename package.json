@@ -41,7 +41,7 @@
     "compile": "node esbuild.mjs",
     "watch": "node esbuild.mjs --watch",
     "vscode:prepublish": "node esbuild.mjs --production",
-    "postinstall": "node -e \"const {execSync,existsSync}=require('child_process'),p='node_modules/@esbuild/darwin-x64';if(!existsSync(p)){execSync('npm pack @esbuild/darwin-x64@0.20.2',{stdio:'ignore'});const fs=require('fs');fs.mkdirSync(p,{recursive:true});execSync('tar -xzf esbuild-darwin-x64-0.20.2.tgz -C '+p+' --strip-components=1');fs.unlinkSync('esbuild-darwin-x64-0.20.2.tgz')}\""
+    "postinstall": "node -e \"const {execSync}=require('child_process'),fs=require('fs'),p='node_modules/@esbuild/darwin-x64';if(!fs.existsSync(p)){execSync('npm pack @esbuild/darwin-x64@0.20.2',{stdio:'ignore'});fs.mkdirSync(p,{recursive:true});execSync('tar -xzf esbuild-darwin-x64-0.20.2.tgz -C '+p+' --strip-components=1');fs.unlinkSync('esbuild-darwin-x64-0.20.2.tgz')}\""
   },
   "optionalDependencies": {
     "@esbuild/darwin-arm64": "0.20.2",

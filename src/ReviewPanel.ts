@@ -28,6 +28,7 @@ export class ReviewPanel {
       column,
       {
         enableScripts: true,
+        enableFindWidget: true,
         localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'dist')],
       }
     );
@@ -43,6 +44,8 @@ export class ReviewPanel {
   }
 
   render(markdown: string, comments: import('./types').PRComment[], filePath: string): void {
+    const fileName = filePath.split('/').pop() ?? filePath;
+    this._panel.title = `PR Review: ${fileName}`;
     const msg: import('./types').RenderMessage = { type: 'render', markdown, comments, filePath };
     this._panel.webview.postMessage(msg);
   }
@@ -51,6 +54,9 @@ export class ReviewPanel {
     const webview = this._panel.webview;
     const scriptUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this._extensionUri, 'dist', 'webview.js')
+    );
+    const mermaidUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this._extensionUri, 'dist', 'mermaid.min.js')
     );
     const nonce = getNonce();
 
@@ -78,15 +84,25 @@ export class ReviewPanel {
       background: var(--vscode-badge-background, #4d4d4d);
       color: var(--vscode-badge-foreground, #fff);
       border-radius: 10px;
-      padding: 1px 7px 1px 3px;
+      padding: 2px 7px 2px 4px;
       cursor: pointer;
       float: right;
       font-size: 11px;
+      line-height: 1;
+      height: 20px;
+      box-sizing: border-box;
       margin-left: 8px;
       vertical-align: middle;
     }
     .pr-bubble:hover { opacity: 0.85; }
-    .pr-bubble-avatar { width: 16px; height: 16px; border-radius: 50%; }
+    .pr-bubble-avatar {
+      width: 14px;
+      height: 14px;
+      min-width: 14px;
+      border-radius: 50%;
+      object-fit: cover;
+      display: block;
+    }
     .pr-thread {
       background: var(--vscode-editor-inactiveSelectionBackground, rgba(255,255,255,0.05));
       border-left: 3px solid var(--vscode-focusBorder, #007acc);
@@ -115,6 +131,7 @@ export class ReviewPanel {
 </head>
 <body>
   <div id="content"><p>Loading&#x2026;</p></div>
+  <script nonce="${nonce}" src="${mermaidUri}"></script>
   <script nonce="${nonce}" src="${scriptUri}"></script>
 </body>
 </html>`;

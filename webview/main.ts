@@ -1,7 +1,9 @@
 import { renderMarkdown } from './renderer';
 import { placeOverlays } from './overlay';
-import mermaid from 'mermaid';
 import type { RenderMessage } from '../src/types';
+
+// mermaid is loaded as a plain <script> tag before this bundle runs.
+declare const mermaid: { initialize(opts: object): void; run(opts: { nodes: NodeList | HTMLElement[] }): Promise<void> };
 
 // acquireVsCodeApi is injected by VS Code into all webview contexts.
 // It is not a normal import — it is a global provided by the host at runtime.

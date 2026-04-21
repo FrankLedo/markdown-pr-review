@@ -8,8 +8,8 @@ export interface GitContext {
   repoRoot: string;
 }
 
-export function getGitContext(): GitContext {
-  const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+export function getGitContext(cwd?: string): GitContext {
+  const workspaceRoot = cwd ?? vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
   if (!workspaceRoot) {
     throw new Error('No workspace folder open.');
   }

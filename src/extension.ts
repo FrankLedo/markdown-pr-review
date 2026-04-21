@@ -25,7 +25,7 @@ export function activate(context: vscode.ExtensionContext): void {
             cancellable: false,
           },
           async () => {
-            const { owner, repo, branch, repoRoot } = getGitContext();
+            const { owner, repo, branch, repoRoot } = getGitContext(path.dirname(filePath));
 
             // Convert absolute file path to repo-relative path with forward slashes
             // (GitHub API uses forward slashes on all platforms)
