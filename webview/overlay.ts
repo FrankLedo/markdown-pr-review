@@ -80,7 +80,7 @@ export function placeOverlays(
     const floatTarget = anchor.tagName.toLowerCase() === 'li'
       ? ((anchor.querySelector(':scope > p') as HTMLElement) ?? anchor)
       : anchor;
-    floatTarget.appendChild(bubble);
+    floatTarget.prepend(bubble);
   }
 }
 
