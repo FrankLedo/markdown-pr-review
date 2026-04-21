@@ -64,10 +64,13 @@ export async function findPrNumber(
 }
 
 function mapComment(raw: GitHubReviewComment): PRComment {
+  if (raw.line == null) {
+    throw new Error(`mapComment: comment ${raw.id} has no line number`);
+  }
   return {
     id: raw.id,
     in_reply_to_id: raw.in_reply_to_id,
-    line: raw.line as number,
+    line: raw.line,
     body: raw.body,
     user: { login: raw.user.login, avatar_url: raw.user.avatar_url },
     created_at: raw.created_at,
@@ -119,7 +122,7 @@ export async function postReply(
   repo: string,
   prNumber: number,
   token: string,
-  payload: { body: string; inReplyToId: number }
+  payload: { body: string; inReplyToId: number; fallbackLine: number }
 ): Promise<PRComment> {
   const raw = await githubRequest<GitHubReviewComment>(
     `/repos/${owner}/${repo}/pulls/${prNumber}/comments`,
@@ -129,6 +132,10 @@ export async function postReply(
       body: { body: payload.body, in_reply_to: payload.inReplyToId },
     }
   );
+  // GitHub may return null for line on replies; fall back to the root thread's line
+  if (raw.line == null) {
+    raw.line = payload.fallbackLine;
+  }
   return mapComment(raw);
 }
 
