@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  release-please:
+  release_please:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -20,8 +20,8 @@ jobs:
           release-type: node
 
   publish:
-    needs: release-please
-    if: ${{ needs.release-please.outputs.release_created }}
+    needs: release_please
+    if: ${{ needs.release_please.outputs.release_created }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
