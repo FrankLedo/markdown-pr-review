@@ -27,6 +27,19 @@ function showToast(message: string): void {
   setTimeout(() => toast.remove(), 4000);
 }
 
+function placeOverlaysKeepOpen(): void {
+  const openIds = new Set(
+    Array.from(document.querySelectorAll<HTMLElement>('[data-thread-for]'))
+      .map(el => Number(el.dataset.threadFor))
+  );
+  placeOverlays(contentEl!, allComments, allThreadMeta, buildCallbacks());
+  if (openIds.size > 0) {
+    document.querySelectorAll<HTMLElement>('[data-thread-id]').forEach(bubble => {
+      if (openIds.has(Number(bubble.dataset.threadId))) bubble.click();
+    });
+  }
+}
+
 function buildCallbacks(): OverlayCallbacks {
   return {
     onReply: (panel, rootId, line) => {
@@ -120,14 +133,14 @@ window.addEventListener('message', (event: MessageEvent<ExtensionMessage>) => {
 
   if (msg.type === 'commentPosted' || msg.type === 'replyPosted') {
     allComments = allComments.map(c => c.id === msg.tempId ? msg.comment : c);
-    placeOverlays(contentEl!, allComments, allThreadMeta, buildCallbacks());
+    placeOverlaysKeepOpen();
     return;
   }
 
   if (msg.type === 'reviewSubmitted') {
     allComments = [...allComments, ...msg.comments];
     draft?.clear();
-    placeOverlays(contentEl!, allComments, allThreadMeta, buildCallbacks());
+    placeOverlaysKeepOpen();
     return;
   }
 
@@ -135,13 +148,13 @@ window.addEventListener('message', (event: MessageEvent<ExtensionMessage>) => {
     allComments = allComments.map(c =>
       c.id === msg.commentId ? { ...c, body: msg.body } : c
     );
-    placeOverlays(contentEl!, allComments, allThreadMeta, buildCallbacks());
+    placeOverlaysKeepOpen();
     return;
   }
 
   if (msg.type === 'commentDeleted') {
     allComments = allComments.filter(c => c.id !== msg.commentId && c.in_reply_to_id !== msg.commentId);
-    placeOverlays(contentEl!, allComments, allThreadMeta, buildCallbacks());
+    placeOverlaysKeepOpen();
     return;
   }
 
@@ -149,7 +162,7 @@ window.addEventListener('message', (event: MessageEvent<ExtensionMessage>) => {
     allThreadMeta = allThreadMeta.map(m =>
       m.nodeId === msg.threadNodeId ? { ...m, isResolved: true } : m
     );
-    placeOverlays(contentEl!, allComments, allThreadMeta, buildCallbacks());
+    placeOverlaysKeepOpen();
     return;
   }
 
@@ -157,19 +170,19 @@ window.addEventListener('message', (event: MessageEvent<ExtensionMessage>) => {
     allThreadMeta = allThreadMeta.map(m =>
       m.nodeId === msg.threadNodeId ? { ...m, isResolved: false } : m
     );
-    placeOverlays(contentEl!, allComments, allThreadMeta, buildCallbacks());
+    placeOverlaysKeepOpen();
     return;
   }
 
   if (msg.type === 'postError') {
     if (msg.tempId != null) {
       allComments = allComments.filter(c => c.id !== msg.tempId);
-      placeOverlays(contentEl!, allComments, allThreadMeta, buildCallbacks());
+      placeOverlaysKeepOpen();
       showToast(`Failed to post — ${msg.message}`);
     } else if (msg.source === 'draft') {
       draft.showError(`Submit failed — ${msg.message}`);
     } else {
-      placeOverlays(contentEl!, allComments, allThreadMeta, buildCallbacks());
+      placeOverlaysKeepOpen();
       showToast(`Action failed — ${msg.message}`);
     }
   }

@@ -55,6 +55,7 @@ function createBubble(
 
   const bubble = document.createElement('span');
   bubble.className = isResolved ? 'pr-bubble pr-resolved' : 'pr-bubble';
+  bubble.dataset.threadId = String(thread.rootId);
   bubble.title = isResolved
     ? `✓ Resolved — ${thread.comments[0].user.login}: ${thread.comments[0].body.slice(0, 60)}`
     : `${thread.comments[0].user.login}: ${thread.comments[0].body.slice(0, 80)}`;
