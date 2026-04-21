@@ -134,7 +134,7 @@ export function initSelectionHandlers(
     btn.className = 'pr-add-btn';
     btn.textContent = '+ Add comment';
     btn.style.left = '0px';
-    btn.style.top = `${rect.top + window.scrollY - 34}px`;
+    btn.style.top = `${rect.top - 34}px`;
 
     btn.addEventListener('mousedown', (e) => e.preventDefault()); // keep selection
     btn.addEventListener('mouseup', (e) => e.stopPropagation()); // prevent doc handler removing btn before click

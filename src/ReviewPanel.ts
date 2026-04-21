@@ -98,7 +98,7 @@ export class ReviewPanel {
       if (msg.type === 'postComment') {
         const comment = await postComment(
           this._owner, this._repo, this._prNumber, token,
-          { body: msg.body, commitId: this._headSha, path: this._filePath, line: msg.line }
+          { body: msg.body, commitId: this._headSha, path: this._filePath, line: msg.line + 1 }
         );
         this._panel.webview.postMessage({ type: 'commentPosted', comment, tempId: msg.tempId });
 
@@ -117,7 +117,7 @@ export class ReviewPanel {
           this._owner, this._repo, this._prNumber, token,
           {
             commitId: this._headSha,
-            comments: this._draftComments.map(c => ({ path: this._filePath, line: c.line, body: c.body })),
+            comments: this._draftComments.map(c => ({ path: this._filePath, line: c.line + 1, body: c.body })),
           }
         );
         this._draftComments = [];
