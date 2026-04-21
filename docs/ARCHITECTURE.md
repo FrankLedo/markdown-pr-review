@@ -98,3 +98,29 @@ Comments are anchored to a commit SHA plus path plus line. If the
 file changes after a comment is posted, GitHub's position can drift.
 Resolve comments against the PR head SHA, not HEAD, to keep positions
 stable during review.
+
+## Phase 3 — Thread lifecycle
+
+Resolve, edit, and delete review comments directly from the webview,
+syncing to GitHub in real time via REST (edit/delete) and GraphQL
+(resolve/unresolve).
+
+### Resolve model
+
+Threads are resolved via GraphQL `resolveReviewThread` mutation, which
+requires a thread-level `node_id` not exposed by the REST API. A
+`fetchThreadMeta` query retrieves thread node_ids and maps them to
+REST comment ids via the first comment's `databaseId`.
+
+### Edit and delete
+
+Edit uses REST `PATCH /repos/.../pulls/comments/{id}`. Delete uses
+REST `DELETE /repos/.../pulls/comments/{id}` (returns 204). Both
+operations are non-optimistic: the DOM updates only after the API
+call succeeds.
+
+### Error handling
+
+Failed actions show a toast notification. The DOM reverts to its
+prior state on any API error, matching the GitHub model of not
+leaving UI in a half-resolved state.
