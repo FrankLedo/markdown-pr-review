@@ -132,6 +132,7 @@ async function handleRender(msg: RenderMessage): Promise<void> {
   placeOverlays(contentEl, allComments, onReply);
 
   const header = document.getElementById('review-header')!;
+  draft?.clear();
   draft = new DraftManager(vscode, header);
 
   if (!selectionHandlersReady) {
