@@ -42,7 +42,7 @@ export type ExtensionMessage =
   | { type: 'commentPosted'; comment: PRComment; tempId: number }
   | { type: 'replyPosted'; comment: PRComment; tempId: number }
   | { type: 'reviewSubmitted'; comments: PRComment[] }
-  | { type: 'postError'; message: string; tempId?: number; source?: string }
+  | { type: 'postError'; message: string; tempId?: number; source?: 'draft' | 'action' }
   | { type: 'commentEdited'; commentId: number; body: string }
   | { type: 'commentDeleted'; commentId: number }
   | { type: 'threadResolved'; threadNodeId: string }
