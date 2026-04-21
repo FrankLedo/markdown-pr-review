@@ -52,27 +52,27 @@ const onReply: OnReply = (panel, rootId, line) => {
 };
 
 function insertComposeAfter(anchor: HTMLElement, box: HTMLElement): void {
-  // A <div> inserted after a <li> inside an <ol>/<ul> is invalid HTML and Chrome
-  // renders it at an unpredictable position. Walk up through list structure until
-  // we reach a safe insertion point, then append inside that container element.
-  let el: HTMLElement = anchor;
-  while (el.parentElement) {
-    const parentTag = el.parentElement.tagName.toLowerCase();
-    if (parentTag === 'ol' || parentTag === 'ul') {
-      el = el.parentElement; // skip past the list — insert after the whole list
-      break;
-    }
-    if (parentTag === 'li') {
-      // append inside the <li> so the compose box is visually indented with the item
-      el.parentElement.querySelector('.pr-compose')?.remove();
-      el.parentElement.appendChild(box);
-      return;
-    }
-    break;
+  // A <div> after a <li> inside <ol>/<ul> is invalid HTML. Append inside the <li>
+  // instead so the compose box is visually indented with the item.
+  const tag = anchor.tagName.toLowerCase();
+
+  // Tight list: anchor IS the <li>
+  if (tag === 'li') {
+    anchor.querySelector('.pr-compose')?.remove();
+    anchor.appendChild(box);
+    return;
   }
-  el.querySelector('.pr-compose')?.remove();
-  el.nextElementSibling?.classList.contains('pr-compose') && el.nextElementSibling.remove();
-  el.insertAdjacentElement('afterend', box);
+
+  // Loose list: anchor is a <p> (or other inline block) whose parent is <li>
+  if (anchor.parentElement?.tagName.toLowerCase() === 'li') {
+    anchor.parentElement.querySelector('.pr-compose')?.remove();
+    anchor.parentElement.appendChild(box);
+    return;
+  }
+
+  // Normal block element: insert after it
+  anchor.nextElementSibling?.classList.contains('pr-compose') && anchor.nextElementSibling.remove();
+  anchor.insertAdjacentElement('afterend', box);
 }
 
 function onAddComment(anchor: HTMLElement, line: number): void {

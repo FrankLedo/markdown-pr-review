@@ -74,7 +74,13 @@ export function placeOverlays(
     const anchor = findAnchorElement(container, thread.line);
     if (!anchor) continue;
     const bubble = createBubble(thread, onReply);
-    anchor.appendChild(bubble);
+    // For loose lists, anchor is a <li> whose first child is a <p> block.
+    // float:right on an element appended after a block falls below it, so
+    // append inside the <p> instead so the bubble floats within the text line.
+    const floatTarget = anchor.tagName.toLowerCase() === 'li'
+      ? ((anchor.querySelector(':scope > p') as HTMLElement) ?? anchor)
+      : anchor;
+    floatTarget.appendChild(bubble);
   }
 }
 
