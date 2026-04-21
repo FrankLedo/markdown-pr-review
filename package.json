@@ -1,9 +1,14 @@
 {
   "name": "markdown-pr-review",
   "displayName": "Markdown PR Review",
-  "description": "Overlay GitHub PR review comments on rendered markdown previews",
+  "description": "Read and review GitHub PR comments on rendered markdown — inline threads, Mermaid diagrams, full thread lifecycle",
   "version": "1.0.0",
   "publisher": "frankledo",
+  "icon": "images/icon.png",
+  "galleryBanner": {
+    "color": "#1e1e2e",
+    "theme": "dark"
+  },
   "engines": {
     "vscode": "^1.85.0"
   },
