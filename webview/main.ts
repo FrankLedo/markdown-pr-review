@@ -116,6 +116,8 @@ window.addEventListener('message', (event: MessageEvent<ExtensionMessage>) => {
     return;
   }
 
+  if (!contentEl) return;
+
   if (msg.type === 'commentPosted' || msg.type === 'replyPosted') {
     allComments = allComments.map(c => c.id === msg.tempId ? msg.comment : c);
     placeOverlays(contentEl!, allComments, allThreadMeta, buildCallbacks());
@@ -124,7 +126,7 @@ window.addEventListener('message', (event: MessageEvent<ExtensionMessage>) => {
 
   if (msg.type === 'reviewSubmitted') {
     allComments = [...allComments, ...msg.comments];
-    draft.clear();
+    draft?.clear();
     placeOverlays(contentEl!, allComments, allThreadMeta, buildCallbacks());
     return;
   }
