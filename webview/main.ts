@@ -82,7 +82,7 @@ function onAddComment(anchor: HTMLElement, line: number): void {
       const tempId = -Date.now();
       allComments.push({
         id: tempId,
-        line,
+        line: line + 1,
         body,
         user: { login: currentUserLogin, avatar_url: '' },
         created_at: new Date().toISOString(),

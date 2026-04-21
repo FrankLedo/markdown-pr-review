@@ -29,7 +29,7 @@ export function findAnchorElement(container: HTMLElement, line: number): HTMLEle
   let bestLine = -1;
   for (const el of elements) {
     const elLine = parseInt(el.dataset['line']!, 10);
-    if (elLine <= line && elLine > bestLine) {
+    if (elLine < line && elLine > bestLine) {
       best = el;
       bestLine = elLine;
     }
