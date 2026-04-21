@@ -2,7 +2,7 @@
   "name": "markdown-pr-review",
   "displayName": "Markdown PR Review",
   "description": "Overlay GitHub PR review comments on rendered markdown previews",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "publisher": "frankledo",
   "engines": {
     "vscode": "^1.85.0"
