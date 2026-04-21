@@ -63,6 +63,17 @@ export async function findPrNumber(
   return { prNumber: pulls[0].number, headSha: pulls[0].head.sha };
 }
 
+function mapComment(raw: GitHubReviewComment): PRComment {
+  return {
+    id: raw.id,
+    in_reply_to_id: raw.in_reply_to_id,
+    line: raw.line as number,
+    body: raw.body,
+    user: { login: raw.user.login, avatar_url: raw.user.avatar_url },
+    created_at: raw.created_at,
+  };
+}
+
 export async function fetchPrComments(
   owner: string,
   repo: string,
@@ -76,25 +87,7 @@ export async function fetchPrComments(
   );
   return raw
     .filter(c => c.path === filePath && c.line != null)
-    .map(c => ({
-      id: c.id,
-      in_reply_to_id: c.in_reply_to_id,
-      line: c.line as number,
-      body: c.body,
-      user: { login: c.user.login, avatar_url: c.user.avatar_url },
-      created_at: c.created_at,
-    }));
-}
-
-function mapComment(raw: GitHubReviewComment): PRComment {
-  return {
-    id: raw.id,
-    in_reply_to_id: raw.in_reply_to_id,
-    line: raw.line as number,
-    body: raw.body,
-    user: { login: raw.user.login, avatar_url: raw.user.avatar_url },
-    created_at: raw.created_at,
-  };
+    .map(mapComment);
 }
 
 export async function postComment(
@@ -140,7 +133,7 @@ export async function postReply(
 }
 
 interface GitHubReview {
-  comments: GitHubReviewComment[];
+  id: number;
 }
 
 export async function submitDraftReview(
@@ -171,7 +164,11 @@ export async function submitDraftReview(
       },
     }
   );
-  return review.comments
+  const reviewComments = await githubRequest<GitHubReviewComment[]>(
+    `/repos/${owner}/${repo}/pulls/${prNumber}/reviews/${review.id}/comments`,
+    token
+  );
+  return reviewComments
     .filter(c => c.line != null)
     .map(mapComment);
 }
