@@ -31,12 +31,19 @@ export function activate(context: vscode.ExtensionContext): void {
             // (GitHub API uses forward slashes on all platforms)
             const relPath = path.relative(repoRoot, filePath).replace(/\\/g, '/');
 
-            const token = await getGitHubToken();
-            const prNumber = await findPrNumber(owner, repo, branch, token);
+            const { token, userLogin } = await getGitHubToken();
+            const { prNumber, headSha } = await findPrNumber(owner, repo, branch, token);
             const comments = await fetchPrComments(owner, repo, prNumber, relPath, token);
 
             const panel = ReviewPanel.createOrShow(context.extensionUri);
-            panel.render(markdown, comments, relPath);
+            panel.render(markdown, comments, {
+              owner,
+              repo,
+              prNumber,
+              headSha,
+              filePath: relPath,
+              currentUserLogin: userLogin,
+            });
           }
         );
       } catch (err: unknown) {
