@@ -1,10 +1,19 @@
-import type { PRComment } from '../src/types';
-import { toggleThread, type OnReply } from './thread';
+import type { PRComment, ThreadMeta } from '../src/types';
+import { toggleThread, type OnReply, type ThreadOptions } from './thread';
 
 interface Thread {
   rootId: number;
   line: number;
   comments: PRComment[];
+}
+
+export interface OverlayCallbacks {
+  onReply?: OnReply;
+  currentUserLogin?: string;
+  onResolve?: (threadNodeId: string) => void;
+  onUnresolve?: (threadNodeId: string) => void;
+  onEdit?: (commentId: number, newBody: string) => void;
+  onDelete?: (commentId: number) => void;
 }
 
 function buildThreads(comments: PRComment[]): Thread[] {
@@ -37,26 +46,52 @@ export function findAnchorElement(container: HTMLElement, line: number): HTMLEle
   return best;
 }
 
-function createBubble(thread: Thread, onReply?: OnReply): HTMLElement {
+function createBubble(
+  thread: Thread,
+  meta: ThreadMeta | undefined,
+  callbacks?: OverlayCallbacks
+): HTMLElement {
+  const isResolved = meta?.isResolved ?? false;
+
   const bubble = document.createElement('span');
-  bubble.className = 'pr-bubble';
-  bubble.title = `${thread.comments[0].user.login}: ${thread.comments[0].body.slice(0, 80)}`;
+  bubble.className = isResolved ? 'pr-bubble pr-resolved' : 'pr-bubble';
+  bubble.title = isResolved
+    ? `✓ Resolved — ${thread.comments[0].user.login}: ${thread.comments[0].body.slice(0, 60)}`
+    : `${thread.comments[0].user.login}: ${thread.comments[0].body.slice(0, 80)}`;
 
-  const avatar = document.createElement('img');
-  avatar.src = thread.comments[0].user.avatar_url;
-  avatar.alt = thread.comments[0].user.login;
-  avatar.className = 'pr-bubble-avatar';
-  bubble.appendChild(avatar);
+  if (isResolved) {
+    const check = document.createElement('span');
+    check.textContent = '✓';
+    check.style.fontSize = '10px';
+    bubble.appendChild(check);
+  } else {
+    const avatar = document.createElement('img');
+    avatar.src = thread.comments[0].user.avatar_url;
+    avatar.alt = thread.comments[0].user.login;
+    avatar.className = 'pr-bubble-avatar';
+    bubble.appendChild(avatar);
 
-  if (thread.comments.length > 1) {
-    const count = document.createElement('span');
-    count.textContent = String(thread.comments.length);
-    bubble.appendChild(count);
+    if (thread.comments.length > 1) {
+      const count = document.createElement('span');
+      count.textContent = String(thread.comments.length);
+      bubble.appendChild(count);
+    }
   }
+
+  const options: ThreadOptions = {
+    onReply: callbacks?.onReply,
+    threadNodeId: meta?.nodeId,
+    isResolved,
+    currentUserLogin: callbacks?.currentUserLogin,
+    onResolve: callbacks?.onResolve,
+    onUnresolve: callbacks?.onUnresolve,
+    onEdit: callbacks?.onEdit,
+    onDelete: callbacks?.onDelete,
+  };
 
   bubble.addEventListener('click', (e) => {
     e.stopPropagation();
-    toggleThread(bubble, thread.comments, thread.rootId, onReply);
+    toggleThread(bubble, thread.comments, thread.rootId, options);
   });
 
   return bubble;
@@ -65,7 +100,8 @@ function createBubble(thread: Thread, onReply?: OnReply): HTMLElement {
 export function placeOverlays(
   container: HTMLElement,
   comments: PRComment[],
-  onReply?: OnReply
+  threadMeta: ThreadMeta[],
+  callbacks?: OverlayCallbacks
 ): void {
   container.querySelectorAll('.pr-bubble, .pr-thread').forEach(el => el.remove());
   if (comments.length === 0) return;
@@ -73,10 +109,8 @@ export function placeOverlays(
   for (const thread of threads) {
     const anchor = findAnchorElement(container, thread.line);
     if (!anchor) continue;
-    const bubble = createBubble(thread, onReply);
-    // For loose lists, anchor is a <li> whose first child is a <p> block.
-    // float:right on an element appended after a block falls below it, so
-    // append inside the <p> instead so the bubble floats within the text line.
+    const meta = threadMeta.find(m => m.rootCommentId === thread.rootId);
+    const bubble = createBubble(thread, meta, callbacks);
     const floatTarget = anchor.tagName.toLowerCase() === 'li'
       ? ((anchor.querySelector(':scope > p') as HTMLElement) ?? anchor)
       : anchor;
@@ -85,7 +119,6 @@ export function placeOverlays(
 }
 
 // Resolves the nearest data-line ancestor of the current selection start.
-// Returns null if the selection is empty or no data-line ancestor is found.
 function resolveSelectionAnchor(
   container: HTMLElement
 ): { anchor: HTMLElement; line: number } | null {
@@ -97,7 +130,6 @@ function resolveSelectionAnchor(
   const el = (node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement) as HTMLElement | null;
   if (!el) return null;
 
-  // Walk up to find a data-line ancestor
   let candidate: HTMLElement | null = el;
   while (candidate && candidate !== container) {
     if (candidate.dataset['line']) {
@@ -106,7 +138,6 @@ function resolveSelectionAnchor(
     candidate = candidate.parentElement;
   }
 
-  // Fallback: last data-line element whose top edge is at or above the selection start
   const allLines = Array.from(container.querySelectorAll('[data-line]')) as HTMLElement[];
   const selTop = range.getBoundingClientRect().top;
   let best: HTMLElement | null = null;
@@ -142,8 +173,8 @@ export function initSelectionHandlers(
     btn.style.left = '0px';
     btn.style.top = `${rect.top - 34}px`;
 
-    btn.addEventListener('mousedown', (e) => e.preventDefault()); // keep selection
-    btn.addEventListener('mouseup', (e) => e.stopPropagation()); // prevent doc handler removing btn before click
+    btn.addEventListener('mousedown', (e) => e.preventDefault());
+    btn.addEventListener('mouseup', (e) => e.stopPropagation());
     btn.addEventListener('click', () => {
       removeFloatBtn();
       onAddComment(resolved.anchor, resolved.line);
@@ -151,7 +182,6 @@ export function initSelectionHandlers(
     });
 
     document.body.appendChild(btn);
-    // Adjust left after append so offsetWidth is known; clamp to avoid going off-screen left
     btn.style.left = `${Math.max(4, rect.right - btn.offsetWidth)}px`;
     floatBtn = btn;
   });
@@ -190,7 +220,6 @@ export function initSelectionHandlers(
       removeContextMenu();
       document.removeEventListener('click', dismiss);
     };
-    // Delay to avoid the current click immediately dismissing the menu
     setTimeout(() => document.addEventListener('click', dismiss), 0);
   });
 }
