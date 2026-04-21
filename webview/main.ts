@@ -1,9 +1,8 @@
 import { renderMarkdown } from './renderer';
-import { placeOverlays, initSelectionHandlers } from './overlay';
-import type { OnReply } from './thread';
+import { placeOverlays, initSelectionHandlers, type OverlayCallbacks } from './overlay';
 import { createComposeBox } from './compose';
 import { DraftManager } from './draft';
-import type { ExtensionMessage, PRComment, RenderMessage } from '../src/types';
+import type { ExtensionMessage, PRComment, RenderMessage, ThreadMeta } from '../src/types';
 
 declare const mermaid: {
   initialize(opts: object): void;
@@ -14,8 +13,9 @@ declare const acquireVsCodeApi: () => { postMessage(msg: unknown): void };
 const vscode = acquireVsCodeApi();
 
 let allComments: PRComment[] = [];
+let allThreadMeta: ThreadMeta[] = [];
 let currentUserLogin = '';
-let draft!: DraftManager; // assigned in handleRender before any user interaction
+let draft!: DraftManager;
 let contentEl: HTMLElement | null = null;
 let selectionHandlersReady = false;
 
@@ -27,50 +27,60 @@ function showToast(message: string): void {
   setTimeout(() => toast.remove(), 4000);
 }
 
-const onReply: OnReply = (panel, rootId, line) => {
-  panel.querySelector('.pr-compose')?.remove();
-  const box = createComposeBox({
-    hasDraft: () => draft.count > 0,
-    onPostImmediately: (body) => {
-      const tempId = -Date.now();
-      allComments.push({
-        id: tempId,
-        in_reply_to_id: rootId,
-        line,
-        body,
-        user: { login: currentUserLogin, avatar_url: '' },
-        created_at: new Date().toISOString(),
+function buildCallbacks(): OverlayCallbacks {
+  return {
+    onReply: (panel, rootId, line) => {
+      panel.querySelector('.pr-compose')?.remove();
+      const box = createComposeBox({
+        hasDraft: () => draft.count > 0,
+        onPostImmediately: (body) => {
+          const tempId = -Date.now();
+          allComments.push({
+            id: tempId,
+            node_id: '',
+            in_reply_to_id: rootId,
+            line,
+            body,
+            user: { login: currentUserLogin, avatar_url: '' },
+            created_at: new Date().toISOString(),
+          });
+          box.remove();
+          placeOverlays(contentEl!, allComments, allThreadMeta, buildCallbacks());
+          vscode.postMessage({ type: 'postReply', inReplyToId: rootId, line, body, tempId });
+        },
+        onAddToDraft: (body) => { draft.add(line, body); },
+        onCancel: () => {},
       });
-      box.remove();
-      placeOverlays(contentEl!, allComments, onReply);
-      vscode.postMessage({ type: 'postReply', inReplyToId: rootId, line, body, tempId });
+      panel.appendChild(box);
     },
-    onAddToDraft: (body) => { draft.add(line, body); },
-    onCancel: () => {},
-  });
-  panel.appendChild(box);
-};
+    currentUserLogin,
+    onEdit: (commentId, newBody) => {
+      vscode.postMessage({ type: 'editComment', commentId, body: newBody });
+    },
+    onDelete: (commentId) => {
+      vscode.postMessage({ type: 'deleteComment', commentId });
+    },
+    onResolve: (threadNodeId) => {
+      vscode.postMessage({ type: 'resolveThread', threadNodeId });
+    },
+    onUnresolve: (threadNodeId) => {
+      vscode.postMessage({ type: 'unresolveThread', threadNodeId });
+    },
+  };
+}
 
 function insertComposeAfter(anchor: HTMLElement, box: HTMLElement): void {
-  // A <div> after a <li> inside <ol>/<ul> is invalid HTML. Append inside the <li>
-  // instead so the compose box is visually indented with the item.
   const tag = anchor.tagName.toLowerCase();
-
-  // Tight list: anchor IS the <li>
   if (tag === 'li') {
     anchor.querySelector('.pr-compose')?.remove();
     anchor.appendChild(box);
     return;
   }
-
-  // Loose list: anchor is a <p> (or other inline block) whose parent is <li>
   if (anchor.parentElement?.tagName.toLowerCase() === 'li') {
     anchor.parentElement.querySelector('.pr-compose')?.remove();
     anchor.parentElement.appendChild(box);
     return;
   }
-
-  // Normal block element: insert after it
   anchor.nextElementSibling?.classList.contains('pr-compose') && anchor.nextElementSibling.remove();
   anchor.insertAdjacentElement('afterend', box);
 }
@@ -82,13 +92,14 @@ function onAddComment(anchor: HTMLElement, line: number): void {
       const tempId = -Date.now();
       allComments.push({
         id: tempId,
+        node_id: '',
         line: line + 1,
         body,
         user: { login: currentUserLogin, avatar_url: '' },
         created_at: new Date().toISOString(),
       });
       box.remove();
-      placeOverlays(contentEl!, allComments, onReply);
+      placeOverlays(contentEl!, allComments, allThreadMeta, buildCallbacks());
       vscode.postMessage({ type: 'postComment', line, body, tempId });
     },
     onAddToDraft: (body) => { draft.add(line, body); },
@@ -107,24 +118,57 @@ window.addEventListener('message', (event: MessageEvent<ExtensionMessage>) => {
 
   if (msg.type === 'commentPosted' || msg.type === 'replyPosted') {
     allComments = allComments.map(c => c.id === msg.tempId ? msg.comment : c);
-    placeOverlays(contentEl!, allComments, onReply);
+    placeOverlays(contentEl!, allComments, allThreadMeta, buildCallbacks());
     return;
   }
 
   if (msg.type === 'reviewSubmitted') {
     allComments = [...allComments, ...msg.comments];
     draft.clear();
-    placeOverlays(contentEl!, allComments, onReply);
+    placeOverlays(contentEl!, allComments, allThreadMeta, buildCallbacks());
+    return;
+  }
+
+  if (msg.type === 'commentEdited') {
+    allComments = allComments.map(c =>
+      c.id === msg.commentId ? { ...c, body: msg.body } : c
+    );
+    placeOverlays(contentEl!, allComments, allThreadMeta, buildCallbacks());
+    return;
+  }
+
+  if (msg.type === 'commentDeleted') {
+    allComments = allComments.filter(c => c.id !== msg.commentId && c.in_reply_to_id !== msg.commentId);
+    placeOverlays(contentEl!, allComments, allThreadMeta, buildCallbacks());
+    return;
+  }
+
+  if (msg.type === 'threadResolved') {
+    allThreadMeta = allThreadMeta.map(m =>
+      m.nodeId === msg.threadNodeId ? { ...m, isResolved: true } : m
+    );
+    placeOverlays(contentEl!, allComments, allThreadMeta, buildCallbacks());
+    return;
+  }
+
+  if (msg.type === 'threadUnresolved') {
+    allThreadMeta = allThreadMeta.map(m =>
+      m.nodeId === msg.threadNodeId ? { ...m, isResolved: false } : m
+    );
+    placeOverlays(contentEl!, allComments, allThreadMeta, buildCallbacks());
     return;
   }
 
   if (msg.type === 'postError') {
     if (msg.tempId != null) {
       allComments = allComments.filter(c => c.id !== msg.tempId);
-      placeOverlays(contentEl!, allComments, onReply);
+      placeOverlays(contentEl!, allComments, allThreadMeta, buildCallbacks());
       showToast(`Failed to post — ${msg.message}`);
-    } else {
+    } else if (msg.source === 'draft') {
       draft.showError(`Submit failed — ${msg.message}`);
+    } else {
+      placeOverlays(contentEl!, allComments, allThreadMeta, buildCallbacks());
+      showToast(`Action failed — ${msg.message}`);
     }
   }
 });
@@ -135,6 +179,7 @@ async function handleRender(msg: RenderMessage): Promise<void> {
 
   currentUserLogin = msg.currentUserLogin;
   allComments = [...msg.comments];
+  allThreadMeta = [...msg.threadMeta];
 
   contentEl.innerHTML = renderMarkdown(msg.markdown);
 
@@ -149,7 +194,7 @@ async function handleRender(msg: RenderMessage): Promise<void> {
     await mermaid.run({ nodes: mermaidNodes });
   }
 
-  placeOverlays(contentEl, allComments, onReply);
+  placeOverlays(contentEl, allComments, allThreadMeta, buildCallbacks());
 
   const header = document.getElementById('review-header')!;
   draft?.clear();
