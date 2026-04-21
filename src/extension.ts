@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
+import * as fs from 'fs';
 import { ReviewPanel } from './ReviewPanel';
 import { getGitContext } from './GitContext';
 import { getGitHubToken, findPrNumber, fetchPrComments } from './GitHubClient';
@@ -27,16 +28,25 @@ export function activate(context: vscode.ExtensionContext): void {
           async () => {
             const { owner, repo, branch, repoRoot } = getGitContext(path.dirname(filePath));
 
-            // Convert absolute file path to repo-relative path with forward slashes
-            // (GitHub API uses forward slashes on all platforms)
-            const relPath = path.relative(repoRoot, filePath).replace(/\\/g, '/');
+            // Resolve symlinks so both paths share the same real prefix.
+            // VS Code preserves symlink paths in fsPath (e.g. /Users/fxl/pr-review/...)
+            // but git rev-parse --show-toplevel returns the resolved real path.
+            const realFilePath = fs.realpathSync(filePath);
+            const relPath = path.relative(repoRoot, realFilePath).replace(/\\/g, '/');
 
-            const token = await getGitHubToken();
-            const prNumber = await findPrNumber(owner, repo, branch, token);
+            const { token, userLogin } = await getGitHubToken();
+            const { prNumber, headSha } = await findPrNumber(owner, repo, branch, token);
             const comments = await fetchPrComments(owner, repo, prNumber, relPath, token);
 
             const panel = ReviewPanel.createOrShow(context.extensionUri);
-            panel.render(markdown, comments, relPath);
+            panel.render(markdown, comments, {
+              owner,
+              repo,
+              prNumber,
+              headSha,
+              filePath: relPath,
+              currentUserLogin: userLogin,
+            });
           }
         );
       } catch (err: unknown) {

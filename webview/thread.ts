@@ -1,9 +1,14 @@
 import type { PRComment } from '../src/types';
 import { renderMarkdown } from './renderer';
 
-export function toggleThread(bubble: HTMLElement, comments: PRComment[], threadId: number): void {
-  // Use data-thread-for so each thread panel can be toggled independently,
-  // even when two threads share the same data-line anchor element.
+export type OnReply = (panel: HTMLElement, rootId: number, line: number) => void;
+
+export function toggleThread(
+  bubble: HTMLElement,
+  comments: PRComment[],
+  threadId: number,
+  onReply?: OnReply
+): void {
   const existing = document.querySelector(`[data-thread-for="${threadId}"]`);
   if (existing) {
     existing.remove();
@@ -51,6 +56,22 @@ export function toggleThread(bubble: HTMLElement, comments: PRComment[], threadI
     panel.appendChild(item);
   }
 
-  // Insert the thread panel after the anchor element
+  if (onReply) {
+    const footer = document.createElement('div');
+    footer.className = 'pr-thread-footer';
+
+    const replyBtn = document.createElement('button');
+    replyBtn.className = 'pr-reply-btn';
+    replyBtn.textContent = 'Reply';
+
+    replyBtn.addEventListener('click', () => {
+      const rootComment = comments.find(c => !c.in_reply_to_id) ?? comments[0];
+      onReply(panel, rootComment.id, rootComment.line);
+    });
+
+    footer.appendChild(replyBtn);
+    panel.appendChild(footer);
+  }
+
   parent.insertAdjacentElement('afterend', panel);
 }

@@ -1,44 +1,162 @@
 import { renderMarkdown } from './renderer';
-import { placeOverlays } from './overlay';
-import type { RenderMessage } from '../src/types';
+import { placeOverlays, initSelectionHandlers } from './overlay';
+import type { OnReply } from './thread';
+import { createComposeBox } from './compose';
+import { DraftManager } from './draft';
+import type { ExtensionMessage, PRComment, RenderMessage } from '../src/types';
 
-// mermaid is loaded as a plain <script> tag before this bundle runs.
-declare const mermaid: { initialize(opts: object): void; run(opts: { nodes: NodeList | HTMLElement[] }): Promise<void> };
+declare const mermaid: {
+  initialize(opts: object): void;
+  run(opts: { nodes: NodeList | HTMLElement[] }): Promise<void>;
+};
 
-// acquireVsCodeApi is injected by VS Code into all webview contexts.
-// It is not a normal import — it is a global provided by the host at runtime.
 declare const acquireVsCodeApi: () => { postMessage(msg: unknown): void };
-// Reserved for future tasks that send messages back to the extension host.
-// Declared here so it is only acquired once (VS Code enforces a single call per webview).
-// @ts-ignore TS6133 — intentionally unused until a later task needs postMessage
 const vscode = acquireVsCodeApi();
 
-window.addEventListener('message', (event: MessageEvent<RenderMessage>) => {
-  if (event.data.type === 'render') {
-    handleRender(event.data).catch(console.error);
+let allComments: PRComment[] = [];
+let currentUserLogin = '';
+let draft!: DraftManager; // assigned in handleRender before any user interaction
+let contentEl: HTMLElement | null = null;
+let selectionHandlersReady = false;
+
+function showToast(message: string): void {
+  const toast = document.createElement('div');
+  toast.className = 'pr-toast';
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 4000);
+}
+
+const onReply: OnReply = (panel, rootId, line) => {
+  panel.querySelector('.pr-compose')?.remove();
+  const box = createComposeBox({
+    hasDraft: () => draft.count > 0,
+    onPostImmediately: (body) => {
+      const tempId = -Date.now();
+      allComments.push({
+        id: tempId,
+        in_reply_to_id: rootId,
+        line,
+        body,
+        user: { login: currentUserLogin, avatar_url: '' },
+        created_at: new Date().toISOString(),
+      });
+      box.remove();
+      placeOverlays(contentEl!, allComments, onReply);
+      vscode.postMessage({ type: 'postReply', inReplyToId: rootId, line, body, tempId });
+    },
+    onAddToDraft: (body) => { draft.add(line, body); },
+    onCancel: () => {},
+  });
+  panel.appendChild(box);
+};
+
+function insertComposeAfter(anchor: HTMLElement, box: HTMLElement): void {
+  // A <div> after a <li> inside <ol>/<ul> is invalid HTML. Append inside the <li>
+  // instead so the compose box is visually indented with the item.
+  const tag = anchor.tagName.toLowerCase();
+
+  // Tight list: anchor IS the <li>
+  if (tag === 'li') {
+    anchor.querySelector('.pr-compose')?.remove();
+    anchor.appendChild(box);
+    return;
+  }
+
+  // Loose list: anchor is a <p> (or other inline block) whose parent is <li>
+  if (anchor.parentElement?.tagName.toLowerCase() === 'li') {
+    anchor.parentElement.querySelector('.pr-compose')?.remove();
+    anchor.parentElement.appendChild(box);
+    return;
+  }
+
+  // Normal block element: insert after it
+  anchor.nextElementSibling?.classList.contains('pr-compose') && anchor.nextElementSibling.remove();
+  anchor.insertAdjacentElement('afterend', box);
+}
+
+function onAddComment(anchor: HTMLElement, line: number): void {
+  const box = createComposeBox({
+    hasDraft: () => draft.count > 0,
+    onPostImmediately: (body) => {
+      const tempId = -Date.now();
+      allComments.push({
+        id: tempId,
+        line: line + 1,
+        body,
+        user: { login: currentUserLogin, avatar_url: '' },
+        created_at: new Date().toISOString(),
+      });
+      box.remove();
+      placeOverlays(contentEl!, allComments, onReply);
+      vscode.postMessage({ type: 'postComment', line, body, tempId });
+    },
+    onAddToDraft: (body) => { draft.add(line, body); },
+    onCancel: () => {},
+  });
+  insertComposeAfter(anchor, box);
+}
+
+window.addEventListener('message', (event: MessageEvent<ExtensionMessage>) => {
+  const msg = event.data;
+
+  if (msg.type === 'render') {
+    handleRender(msg).catch(console.error);
+    return;
+  }
+
+  if (msg.type === 'commentPosted' || msg.type === 'replyPosted') {
+    allComments = allComments.map(c => c.id === msg.tempId ? msg.comment : c);
+    placeOverlays(contentEl!, allComments, onReply);
+    return;
+  }
+
+  if (msg.type === 'reviewSubmitted') {
+    allComments = [...allComments, ...msg.comments];
+    draft.clear();
+    placeOverlays(contentEl!, allComments, onReply);
+    return;
+  }
+
+  if (msg.type === 'postError') {
+    if (msg.tempId != null) {
+      allComments = allComments.filter(c => c.id !== msg.tempId);
+      placeOverlays(contentEl!, allComments, onReply);
+      showToast(`Failed to post — ${msg.message}`);
+    } else {
+      draft.showError(`Submit failed — ${msg.message}`);
+    }
   }
 });
 
 async function handleRender(msg: RenderMessage): Promise<void> {
-  const content = document.getElementById('content');
-  if (!content) return;
+  contentEl = document.getElementById('content');
+  if (!contentEl) return;
 
-  // 1. Render markdown → HTML with data-line attributes
-  content.innerHTML = renderMarkdown(msg.markdown);
+  currentUserLogin = msg.currentUserLogin;
+  allComments = [...msg.comments];
 
-  // 2. Initialize Mermaid and wait for all diagrams to finish rendering before
-  //    placing overlays — otherwise bubbles land on placeholder elements.
+  contentEl.innerHTML = renderMarkdown(msg.markdown);
+
   const isDark =
     document.body.classList.contains('vscode-dark') ||
     document.body.classList.contains('vscode-high-contrast');
 
   mermaid.initialize({ startOnLoad: false, theme: isDark ? 'dark' : 'default' });
 
-  const mermaidNodes = content.querySelectorAll<HTMLElement>('.mermaid');
+  const mermaidNodes = contentEl.querySelectorAll<HTMLElement>('.mermaid');
   if (mermaidNodes.length > 0) {
     await mermaid.run({ nodes: mermaidNodes });
   }
 
-  // 3. Place comment bubbles now that all DOM elements are in final position
-  placeOverlays(content, msg.comments);
+  placeOverlays(contentEl, allComments, onReply);
+
+  const header = document.getElementById('review-header')!;
+  draft?.clear();
+  draft = new DraftManager(vscode, header);
+
+  if (!selectionHandlersReady) {
+    initSelectionHandlers(contentEl, onAddComment);
+    selectionHandlersReady = true;
+  }
 }
