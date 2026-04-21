@@ -34,6 +34,9 @@ export function activate(context: vscode.ExtensionContext): void {
           async () => {
             const { owner, repo, branch, repoRoot } = getGitContext(path.dirname(filePath));
 
+            // Resolve symlinks so both paths share the same real prefix.
+            // VS Code preserves symlink paths in fsPath (e.g. /Users/fxl/pr-review/...)
+            // but git rev-parse --show-toplevel returns the resolved real path.
             const realFilePath = fs.realpathSync(filePath);
             const relPath = path.relative(repoRoot, realFilePath).replace(/\\/g, '/');
 
