@@ -1,10 +1,17 @@
 import MarkdownIt from 'markdown-it';
+import anchor from 'markdown-it-anchor';
+import GithubSlugger from 'github-slugger';
 import type Token from 'markdown-it/lib/token.mjs';
 import type Renderer from 'markdown-it/lib/renderer.mjs';
 import type { Options } from 'markdown-it';
 
 export function renderMarkdown(source: string): string {
   const md = new MarkdownIt({ html: false, linkify: true, breaks: false });
+
+  const slugger = new GithubSlugger();
+  md.use(anchor, {
+    slugify: (s: string) => slugger.slug(s),
+  });
 
   // Enable source maps so token.map = [startLine, endLine] is populated on block tokens.
   (md.options as Record<string, unknown>)['sourceMap'] = true;
