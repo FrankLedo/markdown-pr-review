@@ -97,7 +97,12 @@ export class ReviewPanel {
   }
 
   private async _handleMessage(msg: WebviewMessage): Promise<void> {
-    if (msg.type === 'ready') return;
+    if (msg.type === 'ready') {
+      if (this._lastRenderMsg) {
+        this._panel.webview.postMessage(this._lastRenderMsg);
+      }
+      return;
+    }
 
     const tempId = (msg as { tempId?: number }).tempId;
 

@@ -121,6 +121,8 @@ function onAddComment(anchor: HTMLElement, line: number): void {
   insertComposeAfter(anchor, box);
 }
 
+vscode.postMessage({ type: 'ready' });
+
 window.addEventListener('message', (event: MessageEvent<ExtensionMessage>) => {
   const msg = event.data;
 
