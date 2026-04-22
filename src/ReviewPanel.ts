@@ -399,6 +399,54 @@ export class ReviewPanel {
     }
     .pr-resolve-btn:hover { background: var(--vscode-list-hoverBackground, rgba(255,255,255,0.05)); }
     .pr-resolve-btn:disabled { opacity: 0.5; cursor: default; }
+    .pr-nav-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      margin-right: 12px;
+    }
+    .pr-nav-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .pr-nav-right {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .pr-nav-count {
+      background: var(--vscode-badge-background, #4d4d4d);
+      color: var(--vscode-badge-foreground, #fff);
+      border-radius: 10px;
+      padding: 2px 8px;
+      font-size: 11px;
+    }
+    .pr-nav-btn {
+      background: rgba(255,255,255,0.08);
+      border: none;
+      color: var(--vscode-editor-foreground);
+      border-radius: 3px;
+      padding: 2px 8px;
+      font-size: 12px;
+      cursor: pointer;
+      line-height: 1.4;
+    }
+    .pr-nav-btn:hover { background: rgba(255,255,255,0.15); }
+    .pr-nav-counter {
+      opacity: 0.6;
+      font-size: 11px;
+      min-width: 36px;
+      text-align: center;
+    }
+    @keyframes pr-nav-highlight {
+      0%   { outline: 2px solid var(--vscode-focusBorder, #007acc); }
+      100% { outline: 2px solid transparent; }
+    }
+    .pr-nav-highlight {
+      animation: pr-nav-highlight 600ms ease-out forwards;
+    }
   </style>
 </head>
 <body>
