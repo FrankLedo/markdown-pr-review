@@ -14,6 +14,7 @@ export interface OverlayCallbacks {
   onUnresolve?: (threadNodeId: string) => void;
   onEdit?: (commentId: number, newBody: string) => void;
   onDelete?: (commentId: number) => void;
+  onThreadToggle?: (rootId: number, isOpen: boolean) => void;
 }
 
 function buildThreads(comments: PRComment[]): Thread[] {
@@ -92,7 +93,9 @@ function createBubble(
 
   bubble.addEventListener('click', (e) => {
     e.stopPropagation();
+    const isOpen = !document.querySelector(`[data-thread-for="${thread.rootId}"]`);
     toggleThread(bubble, thread.comments, thread.rootId, options);
+    callbacks?.onThreadToggle?.(thread.rootId, isOpen);
   });
 
   return bubble;
