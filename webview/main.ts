@@ -2,6 +2,7 @@ import { renderMarkdown } from './renderer';
 import { placeOverlays, initSelectionHandlers, type OverlayCallbacks } from './overlay';
 import { createComposeBox } from './compose';
 import { DraftManager } from './draft';
+import { NavStrip } from './nav';
 import type { ExtensionMessage, PRComment, RenderMessage, ThreadMeta } from '../src/types';
 
 declare const mermaid: {
@@ -18,6 +19,12 @@ let currentUserLogin = '';
 let draft!: DraftManager;
 let contentEl: HTMLElement | null = null;
 let selectionHandlersReady = false;
+let openThreadIds: Set<number> = new Set();
+let navStrip: NavStrip | undefined;
+
+function countThreads(): number {
+  return document.querySelectorAll<HTMLElement>('[data-thread-id]').length;
+}
 
 function showToast(message: string): void {
   const toast = document.createElement('div');
@@ -28,16 +35,11 @@ function showToast(message: string): void {
 }
 
 function placeOverlaysKeepOpen(): void {
-  const openIds = new Set(
-    Array.from(document.querySelectorAll<HTMLElement>('[data-thread-for]'))
-      .map(el => Number(el.dataset.threadFor))
-  );
   placeOverlays(contentEl!, allComments, allThreadMeta, buildCallbacks());
-  if (openIds.size > 0) {
-    document.querySelectorAll<HTMLElement>('[data-thread-id]').forEach(bubble => {
-      if (openIds.has(Number(bubble.dataset.threadId))) bubble.click();
-    });
-  }
+  navStrip?.update(countThreads());
+  document.querySelectorAll<HTMLElement>('[data-thread-id]').forEach(bubble => {
+    if (openThreadIds.has(Number(bubble.dataset.threadId))) bubble.click();
+  });
 }
 
 function buildCallbacks(): OverlayCallbacks {
@@ -78,6 +80,13 @@ function buildCallbacks(): OverlayCallbacks {
     },
     onUnresolve: (threadNodeId) => {
       vscode.postMessage({ type: 'unresolveThread', threadNodeId });
+    },
+    onThreadToggle: (rootId, isOpen) => {
+      if (isOpen) {
+        openThreadIds.add(rootId);
+      } else {
+        openThreadIds.delete(rootId);
+      }
     },
   };
 }
@@ -122,6 +131,12 @@ function onAddComment(anchor: HTMLElement, line: number): void {
 }
 
 vscode.postMessage({ type: 'ready' });
+
+document.addEventListener('keydown', (e) => {
+  if ((e.target as Element).closest('textarea, input')) return;
+  if (e.key === '[') { e.preventDefault(); navStrip?.prev(); }
+  if (e.key === ']') { e.preventDefault(); navStrip?.next(); }
+});
 
 window.addEventListener('message', (event: MessageEvent<ExtensionMessage>) => {
   const msg = event.data;
@@ -214,6 +229,20 @@ async function handleRender(msg: RenderMessage): Promise<void> {
   placeOverlays(contentEl, allComments, allThreadMeta, buildCallbacks());
 
   const header = document.getElementById('review-header')!;
+  if (!navStrip) {
+    navStrip = new NavStrip(
+      header,
+      () => Array.from(document.querySelectorAll<HTMLElement>('[data-thread-id]')),
+      () => { openThreadIds.clear(); }
+    );
+  }
+  navStrip.update(countThreads());
+
+  // Re-open threads that were open before the tab switch, filtered to bubbles present in DOM
+  document.querySelectorAll<HTMLElement>('[data-thread-id]').forEach(bubble => {
+    if (openThreadIds.has(Number(bubble.dataset.threadId))) bubble.click();
+  });
+
   draft?.clear();
   draft = new DraftManager(vscode, header);
 
