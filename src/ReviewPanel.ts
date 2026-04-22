@@ -404,7 +404,6 @@ export class ReviewPanel {
       align-items: center;
       justify-content: space-between;
       width: 100%;
-      margin-right: 12px;
     }
     .pr-nav-left {
       display: flex;
