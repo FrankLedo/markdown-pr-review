@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <!-- Background -->
+  <rect width="128" height="128" rx="16" fill="#1e1e2e"/>
+
+  <!-- Document body -->
+  <rect x="22" y="18" width="68" height="88" rx="6" fill="#2a2a3e"/>
+
+  <!-- Document lines -->
+  <rect x="32" y="32" width="48" height="5" rx="2.5" fill="#4a4a6a"/>
+  <rect x="32" y="44" width="38" height="5" rx="2.5" fill="#4a4a6a"/>
+  <rect x="32" y="56" width="44" height="5" rx="2.5" fill="#4a4a6a"/>
+  <rect x="32" y="68" width="30" height="5" rx="2.5" fill="#4a4a6a"/>
+
+  <!-- Comment bubble -->
+  <rect x="58" y="62" width="50" height="40" rx="8" fill="#238636"/>
+  <!-- Bubble tail -->
+  <polygon points="68,102 76,102 72,110" fill="#238636"/>
+
+  <!-- Comment lines inside bubble -->
+  <rect x="66" y="72" width="34" height="4" rx="2" fill="#ffffff" opacity="0.9"/>
+  <rect x="66" y="82" width="26" height="4" rx="2" fill="#ffffff" opacity="0.6"/>
+  <rect x="66" y="92" width="20" height="4" rx="2" fill="#ffffff" opacity="0.4"/>
+</svg>

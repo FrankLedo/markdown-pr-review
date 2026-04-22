@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
-import type { PRComment, WebviewMessage } from './types';
-import { postComment, postReply, submitDraftReview, getGitHubToken } from './GitHubClient';
+import type { PRComment, ThreadMeta, WebviewMessage } from './types';
+import { postComment, postReply, submitDraftReview, getGitHubToken,
+         editComment, deleteComment, resolveThread, unresolveThread } from './GitHubClient';
 
 function getNonce(): string {
   let text = '';
@@ -66,7 +67,7 @@ export class ReviewPanel {
     );
   }
 
-  render(markdown: string, comments: PRComment[], ctx: PrContext): void {
+  render(markdown: string, comments: PRComment[], threadMeta: ThreadMeta[], ctx: PrContext): void {
     this._owner = ctx.owner;
     this._repo = ctx.repo;
     this._prNumber = ctx.prNumber;
@@ -81,6 +82,7 @@ export class ReviewPanel {
       type: 'render',
       markdown,
       comments,
+      threadMeta,
       filePath: ctx.filePath,
       headSha: ctx.headSha,
       currentUserLogin: ctx.currentUserLogin,
@@ -122,10 +124,31 @@ export class ReviewPanel {
         );
         this._draftComments = [];
         this._panel.webview.postMessage({ type: 'reviewSubmitted', comments });
+
+      } else if (msg.type === 'editComment') {
+        const newBody = await editComment(this._owner, this._repo, msg.commentId, msg.body, token);
+        this._panel.webview.postMessage({ type: 'commentEdited', commentId: msg.commentId, body: newBody });
+
+      } else if (msg.type === 'deleteComment') {
+        await deleteComment(this._owner, this._repo, msg.commentId, token);
+        this._panel.webview.postMessage({ type: 'commentDeleted', commentId: msg.commentId });
+
+      } else if (msg.type === 'resolveThread') {
+        await resolveThread(msg.threadNodeId, token);
+        this._panel.webview.postMessage({ type: 'threadResolved', threadNodeId: msg.threadNodeId });
+
+      } else if (msg.type === 'unresolveThread') {
+        await unresolveThread(msg.threadNodeId, token);
+        this._panel.webview.postMessage({ type: 'threadUnresolved', threadNodeId: msg.threadNodeId });
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
-      this._panel.webview.postMessage({ type: 'postError', message, tempId });
+      const source =
+        msg.type === 'submitReview' ? 'draft' :
+        (msg.type === 'editComment' || msg.type === 'deleteComment' ||
+         msg.type === 'resolveThread' || msg.type === 'unresolveThread') ? 'action' :
+        undefined;
+      this._panel.webview.postMessage({ type: 'postError', message, tempId, source });
     }
   }
 
@@ -314,6 +337,56 @@ export class ReviewPanel {
       padding: 8px 16px; border-radius: 4px; font-size: 13px;
       z-index: 999; box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
+    .pr-bubble.pr-resolved {
+      opacity: 0.55;
+      background: var(--vscode-disabledForeground, #6e6e6e);
+    }
+    .pr-thread-resolved-banner {
+      font-size: 12px;
+      color: var(--vscode-gitDecoration-ignoredResourceForeground, #8a8a8a);
+      margin-bottom: 8px;
+      font-style: italic;
+    }
+    .pr-thread-item { position: relative; }
+    .pr-dot-menu-btn {
+      position: absolute; top: 4px; right: 4px;
+      background: none; border: none;
+      color: var(--vscode-editor-foreground); cursor: pointer;
+      padding: 2px 6px; border-radius: 3px;
+      font-size: 14px; line-height: 1; opacity: 0;
+    }
+    .pr-thread-item:hover .pr-dot-menu-btn { opacity: 0.7; }
+    .pr-dot-menu-btn:hover { opacity: 1 !important; background: var(--vscode-list-hoverBackground, rgba(255,255,255,0.05)); }
+    .pr-dot-menu {
+      position: absolute; top: 24px; right: 4px;
+      background: var(--vscode-menu-background, #2d2d2d);
+      border: 1px solid var(--vscode-menu-border, rgba(255,255,255,0.2));
+      border-radius: 4px; padding: 4px 0; z-index: 400;
+      min-width: 100px; box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+    .pr-dot-menu-item {
+      padding: 5px 12px; font-size: 12px; cursor: pointer; white-space: nowrap;
+    }
+    .pr-dot-menu-item:hover {
+      background: var(--vscode-menu-selectionBackground, #094771);
+      color: var(--vscode-menu-selectionForeground, #fff);
+    }
+    .pr-dot-menu-item.pr-delete-item { color: var(--vscode-errorForeground, #f48771); }
+    .pr-delete-confirm { font-size: 12px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .pr-btn-danger {
+      background: var(--vscode-errorForeground, #f48771); color: #fff;
+      border: none; border-radius: 4px; padding: 3px 10px; font-size: 12px; cursor: pointer;
+    }
+    .pr-btn-danger:hover { opacity: 0.9; }
+    .pr-btn-danger:disabled { opacity: 0.5; cursor: default; }
+    .pr-resolve-btn {
+      background: none;
+      border: 1px solid var(--vscode-widget-border, rgba(255,255,255,0.2));
+      color: var(--vscode-editor-foreground);
+      padding: 3px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;
+    }
+    .pr-resolve-btn:hover { background: var(--vscode-list-hoverBackground, rgba(255,255,255,0.05)); }
+    .pr-resolve-btn:disabled { opacity: 0.5; cursor: default; }
   </style>
 </head>
 <body>

@@ -8,3 +8,4 @@ esbuild.mjs
 docs/**
 package-lock.json
 .gitignore
+.worktrees/**

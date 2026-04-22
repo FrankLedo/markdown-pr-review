@@ -1,5 +1,6 @@
 export interface PRComment {
   id: number;
+  node_id: string;
   in_reply_to_id?: number;
   line: number;
   body: string;
@@ -7,10 +8,17 @@ export interface PRComment {
   created_at: string;
 }
 
+export interface ThreadMeta {
+  nodeId: string;
+  isResolved: boolean;
+  rootCommentId: number;
+}
+
 export interface RenderMessage {
   type: 'render';
   markdown: string;
   comments: PRComment[];
+  threadMeta: ThreadMeta[];
   filePath: string;
   headSha: string;
   currentUserLogin: string;
@@ -22,7 +30,11 @@ export type WebviewMessage =
   | { type: 'postComment'; line: number; body: string; tempId: number }
   | { type: 'postReply'; inReplyToId: number; line: number; body: string; tempId: number }
   | { type: 'addToDraft'; line: number; body: string }
-  | { type: 'submitReview' };
+  | { type: 'submitReview' }
+  | { type: 'editComment'; commentId: number; body: string }
+  | { type: 'deleteComment'; commentId: number }
+  | { type: 'resolveThread'; threadNodeId: string }
+  | { type: 'unresolveThread'; threadNodeId: string };
 
 // Messages sent from the extension host to the webview
 export type ExtensionMessage =
@@ -30,4 +42,8 @@ export type ExtensionMessage =
   | { type: 'commentPosted'; comment: PRComment; tempId: number }
   | { type: 'replyPosted'; comment: PRComment; tempId: number }
   | { type: 'reviewSubmitted'; comments: PRComment[] }
-  | { type: 'postError'; message: string; tempId?: number };
+  | { type: 'postError'; message: string; tempId?: number; source?: 'draft' | 'action' }
+  | { type: 'commentEdited'; commentId: number; body: string }
+  | { type: 'commentDeleted'; commentId: number }
+  | { type: 'threadResolved'; threadNodeId: string }
+  | { type: 'threadUnresolved'; threadNodeId: string };

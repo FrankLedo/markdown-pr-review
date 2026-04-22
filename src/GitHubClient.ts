@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import type { PRComment } from './types';
+import type { PRComment, ThreadMeta } from './types';
 
 export async function getGitHubToken(): Promise<{ token: string; userLogin: string }> {
   const session = await vscode.authentication.getSession(
@@ -29,7 +29,27 @@ async function githubRequest<T>(
   if (!res.ok) {
     throw new Error(`GitHub API ${res.status}: ${res.statusText} — ${url}`);
   }
+  if (res.status === 204) return undefined as unknown as T;
   return res.json() as Promise<T>;
+}
+
+async function githubGraphQL<T>(
+  query: string,
+  variables: Record<string, unknown>,
+  token: string
+): Promise<T> {
+  const res = await fetch('https://api.github.com/graphql', {
+    method: 'POST',
+    headers: {
+      Authorization: `token ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ query, variables }),
+  });
+  if (!res.ok) throw new Error(`GitHub GraphQL HTTP ${res.status}`);
+  const json = await res.json() as { data?: T; errors?: Array<{ message: string }> };
+  if (json.errors?.length) throw new Error(json.errors.map(e => e.message).join('; '));
+  return json.data as T;
 }
 
 interface GitHubPull {
@@ -39,6 +59,7 @@ interface GitHubPull {
 
 interface GitHubReviewComment {
   id: number;
+  node_id: string;
   in_reply_to_id?: number;
   path: string;
   line: number | null;
@@ -69,6 +90,7 @@ function mapComment(raw: GitHubReviewComment): PRComment {
   }
   return {
     id: raw.id,
+    node_id: raw.node_id,
     in_reply_to_id: raw.in_reply_to_id,
     line: raw.line,
     body: raw.body,
@@ -91,6 +113,57 @@ export async function fetchPrComments(
   return raw
     .filter(c => c.path === filePath && c.line != null)
     .map(mapComment);
+}
+
+interface GraphQLThreadNode {
+  id: string;
+  isResolved: boolean;
+  comments: { nodes: Array<{ databaseId: number }> };
+}
+
+interface FetchThreadMetaResult {
+  repository: {
+    pullRequest: {
+      reviewThreads: { nodes: GraphQLThreadNode[] };
+    };
+  };
+}
+
+export async function fetchThreadMeta(
+  owner: string,
+  repo: string,
+  prNumber: number,
+  token: string
+): Promise<ThreadMeta[]> {
+  const query = `
+    query GetThreadMeta($owner: String!, $repo: String!, $number: Int!) {
+      repository(owner: $owner, name: $repo) {
+        pullRequest(number: $number) {
+          reviewThreads(first: 100) {
+            nodes {
+              id
+              isResolved
+              comments(first: 1) {
+                nodes { databaseId }
+              }
+            }
+          }
+        }
+      }
+    }
+  `;
+  const data = await githubGraphQL<FetchThreadMetaResult>(
+    query,
+    { owner, repo, number: prNumber },
+    token
+  );
+  return data.repository.pullRequest.reviewThreads.nodes
+    .filter(n => n.comments.nodes.length > 0)
+    .map(n => ({
+      nodeId: n.id,
+      isResolved: n.isResolved,
+      rootCommentId: n.comments.nodes[0].databaseId,
+    }));
 }
 
 export async function postComment(
@@ -132,7 +205,6 @@ export async function postReply(
       body: { body: payload.body, in_reply_to: payload.inReplyToId },
     }
   );
-  // GitHub may return null for line on replies; fall back to the root thread's line
   if (raw.line == null) {
     raw.line = payload.fallbackLine;
   }
@@ -178,4 +250,56 @@ export async function submitDraftReview(
   return reviewComments
     .filter(c => c.line != null)
     .map(mapComment);
+}
+
+export async function editComment(
+  owner: string,
+  repo: string,
+  commentId: number,
+  body: string,
+  token: string
+): Promise<string> {
+  const raw = await githubRequest<GitHubReviewComment>(
+    `/repos/${owner}/${repo}/pulls/comments/${commentId}`,
+    token,
+    { method: 'PATCH', body: { body } }
+  );
+  return raw.body;
+}
+
+export async function deleteComment(
+  owner: string,
+  repo: string,
+  commentId: number,
+  token: string
+): Promise<void> {
+  await githubRequest<void>(
+    `/repos/${owner}/${repo}/pulls/comments/${commentId}`,
+    token,
+    { method: 'DELETE' }
+  );
+}
+
+export async function resolveThread(threadNodeId: string, token: string): Promise<void> {
+  await githubGraphQL<unknown>(
+    `mutation ResolveThread($threadId: ID!) {
+      resolveReviewThread(input: { threadId: $threadId }) {
+        thread { id }
+      }
+    }`,
+    { threadId: threadNodeId },
+    token
+  );
+}
+
+export async function unresolveThread(threadNodeId: string, token: string): Promise<void> {
+  await githubGraphQL<unknown>(
+    `mutation UnresolveThread($threadId: ID!) {
+      unresolveReviewThread(input: { threadId: $threadId }) {
+        thread { id }
+      }
+    }`,
+    { threadId: threadNodeId },
+    token
+  );
 }
