@@ -17,6 +17,7 @@ export class NavStrip {
     this._onCloseAll = onCloseAll;
   }
 
+  // Full re-render: resets navigation index to 0 (use after placeOverlays on handleRender).
   update(totalComments: number): void {
     this._currentIndex = 0;
     if (totalComments === 0) {
@@ -49,6 +50,7 @@ export class NavStrip {
     this._refreshCounter();
   }
 
+  // Incremental update: refreshes count and counter WITHOUT resetting nav index (use for partial re-renders).
   refresh(totalComments: number): void {
     if (totalComments === 0) {
       this._stripEl?.remove();
@@ -156,5 +158,6 @@ export class NavStrip {
   private _closeAll(): void {
     document.querySelectorAll<HTMLElement>('[data-thread-for]').forEach(el => el.remove());
     this._onCloseAll();
+    this._refreshCounter();
   }
 }
