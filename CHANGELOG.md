@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.2.0](https://github.com/FrankLedo/markdown-pr-review/compare/v1.1.3...v1.2.0) (2026-04-22)
+
+
+### Features
+
+* add nav strip styles and highlight keyframe animation ([1c32939](https://github.com/FrankLedo/markdown-pr-review/commit/1c3293967aeee7abb2822006339980ae83ed8bb5))
+* add NavStrip class for comment navigation header ([98f3b0b](https://github.com/FrankLedo/markdown-pr-review/commit/98f3b0b13de930e9785e3fb960a6b73cced8d9ba))
+* add onThreadToggle callback to OverlayCallbacks ([db6d710](https://github.com/FrankLedo/markdown-pr-review/commit/db6d7109024042171511592e98a70d23b047b39d))
+* wire NavStrip and open-thread persistence in main.ts ([624e215](https://github.com/FrankLedo/markdown-pr-review/commit/624e215b29e72faaa4ffbc388afcf30b874710c0))
+
+
+### Bug Fixes
+
+* refresh counter after Close All; clarify update vs refresh contract ([9b8d0a2](https://github.com/FrankLedo/markdown-pr-review/commit/9b8d0a2053cd688494467b742835fd2bca20f50e))
+* remove conflicting margin-right from pr-nav-strip ([48a085b](https://github.com/FrankLedo/markdown-pr-review/commit/48a085b7e3c2a45435c9c58369532868dd16d49f))
+* use refresh() for incremental nav strip updates to preserve nav index ([50fd1d7](https://github.com/FrankLedo/markdown-pr-review/commit/50fd1d732fa87bc541bef728fd97a6295d60e4c6))
+
 ## [1.1.3](https://github.com/FrankLedo/markdown-pr-review/compare/v1.1.2...v1.1.3) (2026-04-22)
 
 
