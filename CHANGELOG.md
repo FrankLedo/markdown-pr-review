@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/FrankLedo/markdown-pr-review/compare/v1.0.0...v1.1.0) (2026-04-21)
+
+
+### Features
+
+* add marketplace icon, gallery banner, and rewrite README ([e6a79d8](https://github.com/FrankLedo/markdown-pr-review/commit/e6a79d89c86493cea7ad555561386903c58a33f8))
+
 ## 1.0.0 (2026-04-21)
 
 
