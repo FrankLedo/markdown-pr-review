@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.2](https://github.com/FrankLedo/markdown-pr-review/compare/v1.1.1...v1.1.2) (2026-04-22)
+
+
+### Bug Fixes
+
+* re-render webview when panel becomes visible after being hidden ([b0ef3a0](https://github.com/FrankLedo/markdown-pr-review/commit/b0ef3a0bfc0942c38bf6f7ab0fd625d147ed39de))
+
 ## [1.1.1](https://github.com/FrankLedo/markdown-pr-review/compare/v1.1.0...v1.1.1) (2026-04-22)
 
 
