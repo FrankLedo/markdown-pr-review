@@ -23,7 +23,7 @@ Opens a rendered preview of your markdown file with GitHub PR comment threads ov
 ## Usage
 
 1. Open any markdown file that belongs to a GitHub PR
-2. Click the **comment icon** in the editor title bar (or right-click → **Open PR Review**)
+2. Click the **comment icon** in the editor title bar, right-click → **Open PR Review**, or run `Open PR Review` from the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) if the icon doesn't appear
 3. Enter the PR number
 4. Browse the rendered preview with comment threads overlaid
 
@@ -31,7 +31,7 @@ Opens a rendered preview of your markdown file with GitHub PR comment threads ov
 
 Uses VS Code's built-in GitHub authentication — you'll be prompted to sign in on first use. Or set a Personal Access Token manually:
 
-```
+```bash
 markdown-pr-review.githubToken
 ```
 
@@ -46,7 +46,6 @@ Search **Markdown PR Review** in the Extensions view, or:
 ```bash
 code --install-extension markdown-pr-review-*.vsix
 ```
-
 ## License
 
 [MIT](LICENSE)
