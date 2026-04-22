@@ -49,6 +49,21 @@ export class NavStrip {
     this._refreshCounter();
   }
 
+  refresh(totalComments: number): void {
+    if (totalComments === 0) {
+      this._stripEl?.remove();
+      this._stripEl = null;
+      this._counterEl = null;
+      this._countBadgeEl = null;
+      return;
+    }
+    if (!this._stripEl) {
+      this._render();
+    }
+    this._refreshBadge(totalComments);
+    this._refreshCounter();
+  }
+
   private _render(): void {
     const strip = document.createElement('div');
     strip.className = 'pr-nav-strip';

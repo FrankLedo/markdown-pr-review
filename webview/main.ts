@@ -36,7 +36,7 @@ function showToast(message: string): void {
 
 function placeOverlaysKeepOpen(): void {
   placeOverlays(contentEl!, allComments, allThreadMeta, buildCallbacks());
-  navStrip?.update(countThreads());
+  navStrip?.refresh(countThreads());
   document.querySelectorAll<HTMLElement>('[data-thread-id]').forEach(bubble => {
     if (openThreadIds.has(Number(bubble.dataset.threadId))) bubble.click();
   });
@@ -61,6 +61,7 @@ function buildCallbacks(): OverlayCallbacks {
           });
           box.remove();
           placeOverlays(contentEl!, allComments, allThreadMeta, buildCallbacks());
+          navStrip?.refresh(countThreads());
           vscode.postMessage({ type: 'postReply', inReplyToId: rootId, line, body, tempId });
         },
         onAddToDraft: (body) => { draft.add(line, body); },
@@ -122,6 +123,7 @@ function onAddComment(anchor: HTMLElement, line: number): void {
       });
       box.remove();
       placeOverlays(contentEl!, allComments, allThreadMeta, buildCallbacks());
+      navStrip?.refresh(countThreads());
       vscode.postMessage({ type: 'postComment', line, body, tempId });
     },
     onAddToDraft: (body) => { draft.add(line, body); },
