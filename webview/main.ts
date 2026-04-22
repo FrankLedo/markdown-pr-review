@@ -217,6 +217,16 @@ async function handleRender(msg: RenderMessage): Promise<void> {
 
   if (!selectionHandlersReady) {
     initSelectionHandlers(contentEl, onAddComment);
+    // VS Code webviews intercept all link navigation including #anchor same-page
+    // links. Handle them manually so TOC links scroll to the correct heading.
+    document.addEventListener('click', (e) => {
+      const a = (e.target as Element).closest('a');
+      if (!a) return;
+      const href = a.getAttribute('href');
+      if (!href?.startsWith('#')) return;
+      e.preventDefault();
+      document.querySelector(href)?.scrollIntoView({ behavior: 'smooth' });
+    });
     selectionHandlersReady = true;
   }
 }
