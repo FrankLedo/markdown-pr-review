@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.3](https://github.com/FrankLedo/markdown-pr-review/compare/v1.1.2...v1.1.3) (2026-04-22)
+
+
+### Bug Fixes
+
+* handle #anchor clicks manually to work around VS Code webview navigation intercept ([eba556c](https://github.com/FrankLedo/markdown-pr-review/commit/eba556ca5c843e40c6a507399e80ba26ee869fbb))
+* use ready message to re-render webview after context is destroyed ([ca9345f](https://github.com/FrankLedo/markdown-pr-review/commit/ca9345f5ecf4e30f19ce3e45e626aabaf65738ce))
+
 ## [1.1.2](https://github.com/FrankLedo/markdown-pr-review/compare/v1.1.1...v1.1.2) (2026-04-22)
 
 
