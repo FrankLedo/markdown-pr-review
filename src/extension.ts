@@ -16,8 +16,14 @@ export function activate(context: vscode.ExtensionContext): void {
     'markdown-pr-review.openReview',
     async () => {
       const editor = vscode.window.activeTextEditor;
-      if (!editor || editor.document.languageId !== 'markdown') {
-        vscode.window.showErrorMessage('Open a markdown file first.');
+      const isMarkdown =
+        editor?.document.languageId === 'markdown' ||
+        editor?.document.fileName.endsWith('.md');
+      if (!editor || !isMarkdown) {
+        const lang = editor ? editor.document.languageId : 'none';
+        vscode.window.showErrorMessage(
+          `Open a markdown file first. (detected language: ${lang})`
+        );
         return;
       }
 
