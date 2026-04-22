@@ -34,6 +34,7 @@ export class ReviewPanel {
   private _headSha = '';
   private _filePath = '';
   private _draftComments: Array<{ line: number; body: string }> = [];
+  private _lastRenderMsg: object | undefined;
 
   static createOrShow(extensionUri: vscode.Uri): ReviewPanel {
     const column = vscode.ViewColumn.Beside;
@@ -60,6 +61,11 @@ export class ReviewPanel {
     this._extensionUri = extensionUri;
     this._panel.webview.html = this._buildHtml();
     this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
+    this._panel.onDidChangeViewState(({ webviewPanel }) => {
+      if (webviewPanel.visible && this._lastRenderMsg) {
+        this._panel.webview.postMessage(this._lastRenderMsg);
+      }
+    }, null, this._disposables);
     this._panel.webview.onDidReceiveMessage(
       (msg: WebviewMessage) => { this._handleMessage(msg).catch(console.error); },
       null,
@@ -78,7 +84,7 @@ export class ReviewPanel {
     const fileName = ctx.filePath.split('/').pop() ?? ctx.filePath;
     this._panel.title = `PR Review: ${fileName}`;
 
-    this._panel.webview.postMessage({
+    this._lastRenderMsg = {
       type: 'render',
       markdown,
       comments,
@@ -86,7 +92,8 @@ export class ReviewPanel {
       filePath: ctx.filePath,
       headSha: ctx.headSha,
       currentUserLogin: ctx.currentUserLogin,
-    });
+    };
+    this._panel.webview.postMessage(this._lastRenderMsg);
   }
 
   private async _handleMessage(msg: WebviewMessage): Promise<void> {
