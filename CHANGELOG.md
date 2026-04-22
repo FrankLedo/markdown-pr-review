@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.1](https://github.com/FrankLedo/markdown-pr-review/compare/v1.1.0...v1.1.1) (2026-04-22)
+
+
+### Bug Fixes
+
+* accept .md extension as fallback when languageId is not markdown ([311fae0](https://github.com/FrankLedo/markdown-pr-review/commit/311fae059fbdd2fb9313a31dbb6009a7c7d79d09))
+* add markdown-it-anchor for TOC link support; add test fixture doc ([c3d9acb](https://github.com/FrankLedo/markdown-pr-review/commit/c3d9acb19b255ce2c4c0e0e562b18a450da2d171))
+
 ## [1.1.0](https://github.com/FrankLedo/markdown-pr-review/compare/v1.0.0...v1.1.0) (2026-04-21)
 
 
