@@ -9,3 +9,7 @@ docs/**
 package-lock.json
 .gitignore
 .worktrees/**
+CLAUDE.md
+.github/**
+images/*.svg
+*.vsix
