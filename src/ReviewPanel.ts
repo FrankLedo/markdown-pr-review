@@ -397,6 +397,16 @@ export class ReviewPanel {
     }
     .pr-reply-btn:hover { background: var(--vscode-list-hoverBackground, rgba(255,255,255,0.05)); }
     .mermaid { margin: 1em 0; }
+    .pr-front-matter {
+      background: var(--vscode-textBlockQuote-background, rgba(127,127,127,0.1));
+      border-left: 3px solid var(--vscode-textBlockQuote-border, rgba(127,127,127,0.5));
+      border-radius: 0 4px 4px 0;
+      padding: 8px 12px; margin-bottom: 1em; font-size: 12px;
+    }
+    .pr-front-matter table { border-collapse: collapse; }
+    .pr-front-matter td { padding: 1px 8px 1px 0; vertical-align: top; }
+    .fm-key { color: var(--vscode-symbolIcon-keywordForeground, #569cd6); font-weight: 600; white-space: nowrap; }
+    .fm-val { color: var(--vscode-foreground, inherit); opacity: 0.85; }
     .pr-add-btn {
       position: fixed;
       background: var(--vscode-button-background, #0e639c);
