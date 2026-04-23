@@ -3,6 +3,7 @@ import { placeOverlays, initSelectionHandlers, type OverlayCallbacks } from './o
 import { createComposeBox } from './compose';
 import { DraftManager } from './draft';
 import { NavStrip } from './nav';
+import { insertAfterInTable } from './thread';
 import type { ExtensionMessage, PRComment, RenderMessage, ThreadMeta } from '../src/types';
 
 declare const mermaid: {
@@ -15,6 +16,7 @@ const vscode = acquireVsCodeApi();
 
 let allComments: PRComment[] = [];
 let allThreadMeta: ThreadMeta[] = [];
+let validLines: number[] = [];
 let currentUserLogin = '';
 let draft!: DraftManager;
 let contentEl: HTMLElement | null = null;
@@ -24,6 +26,21 @@ let navStrip: NavStrip | undefined;
 
 function countThreads(): number {
   return document.querySelectorAll<HTMLElement>('[data-thread-id]').length;
+}
+
+const LINE_META_RE = /\n\n---\n\*Comment on line (\d+)\*$/;
+
+function processComment(c: PRComment): PRComment {
+  const m = c.body.match(LINE_META_RE);
+  if (!m) return c;
+  return { ...c, body: c.body.slice(0, m.index as number), line: parseInt(m[1], 10) };
+}
+
+function fileOptionLabel(filePath: string, allPaths: string[]): string {
+  const base = filePath.split('/').pop()!;
+  const hasDupe = allPaths.filter(p => p.split('/').pop() === base).length > 1;
+  if (!hasDupe) return base;
+  return filePath.split('/').slice(-2).join('/');
 }
 
 function showToast(message: string): void {
@@ -104,6 +121,14 @@ function insertComposeAfter(anchor: HTMLElement, box: HTMLElement): void {
     anchor.parentElement.appendChild(box);
     return;
   }
+  // Table cell: inject a full-width row so the compose box doesn't break the table layout.
+  // Override box.remove so the wrapper row is torn down when the compose is dismissed.
+  const removeWrapper = insertAfterInTable(anchor, box);
+  if (removeWrapper) {
+    const orig = box.remove.bind(box);
+    box.remove = () => { orig(); removeWrapper(); };
+    return;
+  }
   anchor.nextElementSibling?.classList.contains('pr-compose') && anchor.nextElementSibling.remove();
   anchor.insertAdjacentElement('afterend', box);
 }
@@ -151,22 +176,27 @@ window.addEventListener('message', (event: MessageEvent<ExtensionMessage>) => {
   if (!contentEl) return;
 
   if (msg.type === 'commentPosted' || msg.type === 'replyPosted') {
-    allComments = allComments.map(c => c.id === msg.tempId ? msg.comment : c);
+    allComments = allComments.map(c => c.id === msg.tempId ? processComment(msg.comment) : c);
     placeOverlaysKeepOpen();
+    if (msg.snapped) showToast('Not on a changed line — anchored nearby. Original line noted in comment.');
     return;
   }
 
   if (msg.type === 'reviewSubmitted') {
-    allComments = [...allComments, ...msg.comments];
+    allComments = [...allComments, ...msg.comments.map(processComment)];
     draft?.clear();
     placeOverlaysKeepOpen();
     return;
   }
 
   if (msg.type === 'commentEdited') {
-    allComments = allComments.map(c =>
-      c.id === msg.commentId ? { ...c, body: msg.body } : c
-    );
+    allComments = allComments.map(c => {
+      if (c.id !== msg.commentId) return c;
+      const m = msg.body.match(LINE_META_RE);
+      return m
+        ? { ...c, body: msg.body.slice(0, m.index as number), line: parseInt(m[1], 10) }
+        : { ...c, body: msg.body };
+    });
     placeOverlaysKeepOpen();
     return;
   }
@@ -212,8 +242,31 @@ async function handleRender(msg: RenderMessage): Promise<void> {
   if (!contentEl) return;
 
   currentUserLogin = msg.currentUserLogin;
-  allComments = [...msg.comments];
+  allComments = msg.comments.map(processComment);
   allThreadMeta = [...msg.threadMeta];
+  validLines = msg.validLines ?? [];
+
+  // Build/update file-switcher dropdown in-place to avoid destroying NavStrip DOM
+  const headerEl = document.getElementById('review-header')!;
+  let selectEl = headerEl.querySelector<HTMLSelectElement>('.pr-file-select');
+  if (!selectEl) {
+    selectEl = document.createElement('select');
+    selectEl.className = 'pr-file-select';
+    selectEl.addEventListener('change', () => {
+      vscode.postMessage({ type: 'switchFile', path: selectEl!.value });
+    });
+    headerEl.appendChild(selectEl);
+  }
+  selectEl.innerHTML = '';
+  for (const f of msg.prFiles) {
+    const opt = document.createElement('option');
+    opt.value = f.path;
+    opt.textContent = f.commentCount > 0
+      ? `● ${fileOptionLabel(f.path, msg.prFiles.map(x => x.path))}`
+      : fileOptionLabel(f.path, msg.prFiles.map(x => x.path));
+    opt.selected = f.path === msg.filePath;
+    selectEl.appendChild(opt);
+  }
 
   contentEl.innerHTML = renderMarkdown(msg.markdown);
 
@@ -249,7 +302,7 @@ async function handleRender(msg: RenderMessage): Promise<void> {
   draft = new DraftManager(vscode, header);
 
   if (!selectionHandlersReady) {
-    initSelectionHandlers(contentEl, onAddComment);
+    initSelectionHandlers(contentEl, onAddComment, () => validLines);
     // VS Code webviews intercept all link navigation including #anchor same-page
     // links. Handle them manually so TOC links scroll to the correct heading.
     document.addEventListener('click', (e) => {

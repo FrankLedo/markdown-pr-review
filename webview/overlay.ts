@@ -158,9 +158,20 @@ let contextMenu: HTMLElement | null = null;
 function removeFloatBtn(): void { floatBtn?.remove(); floatBtn = null; }
 function removeContextMenu(): void { contextMenu?.remove(); contextMenu = null; }
 
+function snapLineFor(line: number, validLines: number[]): number | null {
+  if (validLines.length === 0 || validLines.includes(line)) return null;
+  let best = -1;
+  for (const l of validLines) {
+    if (l <= line && l > best) best = l;
+  }
+  if (best !== -1) return best;
+  return validLines.reduce((a, b) => Math.abs(b - line) < Math.abs(a - line) ? b : a);
+}
+
 export function initSelectionHandlers(
   container: HTMLElement,
-  onAddComment: (anchor: HTMLElement, line: number) => void
+  onAddComment: (anchor: HTMLElement, line: number) => void,
+  getValidLines: () => number[] = () => []
 ): void {
   document.addEventListener('mouseup', () => {
     removeFloatBtn();
@@ -170,10 +181,12 @@ export function initSelectionHandlers(
     const resolved = resolveSelectionAnchor(container);
     if (!resolved) return;
 
+    const snapTarget = snapLineFor(resolved.line, getValidLines());
     const rect = sel.getRangeAt(0).getBoundingClientRect();
     const btn = document.createElement('button');
-    btn.className = 'pr-add-btn';
+    btn.className = snapTarget !== null ? 'pr-add-btn pr-add-btn--snap' : 'pr-add-btn';
     btn.textContent = '+ Add comment';
+    btn.title = snapTarget !== null ? 'Line is outside the diff' : '';
     btn.style.left = '0px';
     btn.style.top = `${rect.top - 34}px`;
 
@@ -202,6 +215,7 @@ export function initSelectionHandlers(
 
     e.preventDefault();
 
+    const snapTarget = snapLineFor(resolved.line, getValidLines());
     const menu = document.createElement('div');
     menu.className = 'pr-context-menu';
     menu.style.left = `${e.clientX}px`;
@@ -209,7 +223,9 @@ export function initSelectionHandlers(
 
     const item = document.createElement('div');
     item.className = 'pr-context-item';
-    item.textContent = '+ Add comment';
+    item.textContent = snapTarget !== null
+      ? '+ Add comment (outside diff)'
+      : '+ Add comment';
     item.addEventListener('click', () => {
       removeContextMenu();
       onAddComment(resolved.anchor, resolved.line);
