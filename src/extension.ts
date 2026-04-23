@@ -48,12 +48,22 @@ export function activate(context: vscode.ExtensionContext): void {
   statusBarItem.tooltip = 'Markdown PR Review';
   context.subscriptions.push(statusBarItem);
 
+  const scheduleRefresh = () => {
+    if (statusBarDebounce) clearTimeout(statusBarDebounce);
+    statusBarDebounce = setTimeout(() => refreshPrStatusBar(statusBarItem), 2000);
+  };
+
   context.subscriptions.push(
-    vscode.window.onDidChangeActiveTextEditor(() => {
-      if (statusBarDebounce) clearTimeout(statusBarDebounce);
-      statusBarDebounce = setTimeout(() => refreshPrStatusBar(statusBarItem), 2000);
-    })
+    vscode.window.onDidChangeActiveTextEditor(scheduleRefresh)
   );
+
+  // Also react to git branch changes so the bar updates without a file switch.
+  const gitExt = vscode.extensions.getExtension<{ getAPI(v: 1): { repositories: Array<{ state: { onDidChange: vscode.Event<void> } }> } }>('vscode.git');
+  if (gitExt?.isActive) {
+    for (const repo of gitExt.exports.getAPI(1).repositories) {
+      context.subscriptions.push(repo.state.onDidChange(scheduleRefresh));
+    }
+  }
 
   refreshPrStatusBar(statusBarItem);
 
