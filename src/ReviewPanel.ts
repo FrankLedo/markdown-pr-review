@@ -95,8 +95,7 @@ export class ReviewPanel {
     this._currentUserLogin = ctx.currentUserLogin;
     this._draftComments = [];
 
-    const fileName = ctx.filePath.split('/').pop() ?? ctx.filePath;
-    this._panel.title = `PR Review: ${fileName}`;
+    this._panel.title = 'MD PR Review';
 
     this._lastRenderMsg = {
       type: 'render',
@@ -147,8 +146,7 @@ export class ReviewPanel {
     this._filePath = relPath;
     this._draftComments = [];
 
-    const fileName = relPath.split('/').pop() ?? relPath;
-    this._panel.title = `PR Review: ${fileName}`;
+    this._panel.title = 'MD PR Review';
 
     this._lastRenderMsg = {
       type: 'render',
