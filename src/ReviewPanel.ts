@@ -569,6 +569,7 @@ export class ReviewPanel {
     .pr-nav-highlight {
       animation: pr-nav-highlight 600ms ease-out forwards;
     }
+    .pr-table-thread-row td { border: none !important; padding: 0 !important; }
     .pr-file-select {
       font-size: 12px;
       background: var(--vscode-dropdown-background, #3c3c3c);

@@ -145,6 +145,31 @@ function addDotMenu(
   });
 }
 
+function tableColCount(table: Element): number {
+  let max = 1;
+  table.querySelectorAll('tr').forEach(row => {
+    let cols = 0;
+    row.querySelectorAll('td, th').forEach(cell => { cols += (cell as HTMLTableCellElement).colSpan || 1; });
+    if (cols > max) max = cols;
+  });
+  return max;
+}
+
+export function insertAfterInTable(anchor: HTMLElement, content: HTMLElement): (() => void) | null {
+  const tr = anchor.closest('tr') as HTMLElement | null;
+  if (!tr) return null;
+  const table = tr.closest('table')!;
+  const wrapRow = document.createElement('tr');
+  wrapRow.className = 'pr-table-thread-row';
+  const wrapCell = document.createElement('td');
+  wrapCell.colSpan = tableColCount(table);
+  wrapCell.style.padding = '0';
+  wrapCell.appendChild(content);
+  wrapRow.appendChild(wrapCell);
+  tr.insertAdjacentElement('afterend', wrapRow);
+  return () => wrapRow.remove();
+}
+
 export function toggleThread(
   bubble: HTMLElement,
   comments: PRComment[],
@@ -153,7 +178,8 @@ export function toggleThread(
 ): void {
   const existing = document.querySelector(`[data-thread-for="${threadId}"]`);
   if (existing) {
-    existing.remove();
+    const tableRow = existing.closest('.pr-table-thread-row');
+    (tableRow ?? existing).remove();
     return;
   }
 
@@ -256,5 +282,7 @@ export function toggleThread(
   }
 
   panel.appendChild(footer);
-  parent.insertAdjacentElement('afterend', panel);
+  if (!insertAfterInTable(parent, panel)) {
+    parent.insertAdjacentElement('afterend', panel);
+  }
 }

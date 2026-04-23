@@ -3,6 +3,7 @@ import { placeOverlays, initSelectionHandlers, type OverlayCallbacks } from './o
 import { createComposeBox } from './compose';
 import { DraftManager } from './draft';
 import { NavStrip } from './nav';
+import { insertAfterInTable } from './thread';
 import type { ExtensionMessage, PRComment, RenderMessage, ThreadMeta } from '../src/types';
 
 declare const mermaid: {
@@ -117,6 +118,14 @@ function insertComposeAfter(anchor: HTMLElement, box: HTMLElement): void {
   if (anchor.parentElement?.tagName.toLowerCase() === 'li') {
     anchor.parentElement.querySelector('.pr-compose')?.remove();
     anchor.parentElement.appendChild(box);
+    return;
+  }
+  // Table cell: inject a full-width row so the compose box doesn't break the table layout.
+  // Override box.remove so the wrapper row is torn down when the compose is dismissed.
+  const removeWrapper = insertAfterInTable(anchor, box);
+  if (removeWrapper) {
+    const orig = box.remove.bind(box);
+    box.remove = () => { orig(); removeWrapper(); };
     return;
   }
   anchor.nextElementSibling?.classList.contains('pr-compose') && anchor.nextElementSibling.remove();
