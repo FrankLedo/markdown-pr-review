@@ -57,8 +57,9 @@ function updateCurrentFileOption(): void {
   const opt = selectEl.options[selectEl.selectedIndex];
   if (!opt) return;
   const allPaths = Array.from(selectEl.options).map(o => o.value);
-  const openCount = allThreadMeta.filter(t => !t.isResolved).length;
-  const resolvedCount = allThreadMeta.filter(t => t.isResolved).length;
+  const currentPath = opt.value;
+  const openCount = allThreadMeta.filter(t => t.path === currentPath && !t.isResolved).length;
+  const resolvedCount = allThreadMeta.filter(t => t.path === currentPath && t.isResolved).length;
   opt.textContent = fileOptionLabel(opt.value, openCount, resolvedCount, allPaths);
 }
 

@@ -139,13 +139,11 @@ export class ReviewPanel {
       console.warn('fetchThreadMeta failed on switch:', err);
     }
 
-    this._prFiles = this._prFiles.map(f =>
-      f.path === relPath ? {
-        ...f,
-        openCount: threadMeta.filter(t => !t.isResolved).length,
-        resolvedCount: threadMeta.filter(t => t.isResolved).length,
-      } : f
-    );
+    this._prFiles = this._prFiles.map(f => ({
+      ...f,
+      openCount: threadMeta.filter(t => t.path === f.path && !t.isResolved).length,
+      resolvedCount: threadMeta.filter(t => t.path === f.path && t.isResolved).length,
+    }));
     this._filePath = relPath;
     this._draftComments = [];
 
