@@ -87,7 +87,7 @@ export class NavStrip {
     const prevBtn = document.createElement('button');
     prevBtn.className = 'pr-nav-btn';
     prevBtn.textContent = '↑';
-    prevBtn.dataset.tooltip = 'Previous ([)';
+    prevBtn.dataset.tooltip = 'Previous  [';
     prevBtn.addEventListener('click', () => this.prev());
 
     const counterEl = document.createElement('span');
@@ -96,7 +96,7 @@ export class NavStrip {
     const nextBtn = document.createElement('button');
     nextBtn.className = 'pr-nav-btn';
     nextBtn.textContent = '↓';
-    nextBtn.dataset.tooltip = 'Next (])';
+    nextBtn.dataset.tooltip = 'Next  ]';
     nextBtn.addEventListener('click', () => this.next());
 
     right.appendChild(prevBtn);
