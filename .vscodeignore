@@ -13,3 +13,5 @@ CLAUDE.md
 .github/**
 images/*.svg
 *.vsix
+test/**
+*.code-workspace
