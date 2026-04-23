@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.5.1](https://github.com/FrankLedo/markdown-pr-review/compare/v1.5.0...v1.5.1) (2026-04-23)
+
+
+### Bug Fixes
+
+* anchor comment bubbles to table rows, not cells ([65fb184](https://github.com/FrankLedo/markdown-pr-review/commit/65fb1849f6f099fb088326dc86540d958f520ff9))
+* CSS tooltips on nav arrows and gap between strip and dropdown ([7630403](https://github.com/FrankLedo/markdown-pr-review/commit/7630403e95c6dc4dc2f8555d88f0534f35c19914))
+* show nav button tooltips below, not above header ([29da79d](https://github.com/FrankLedo/markdown-pr-review/commit/29da79d74bd24b5be6b23ea5492daea5e863e733))
+* tooltip format matches OS shortcut style — no parens, spaced key ([ec719a2](https://github.com/FrankLedo/markdown-pr-review/commit/ec719a2a204330369ff4b217d229d11a043cca85))
+
 ## [Unreleased]
 
 ### Fixed
