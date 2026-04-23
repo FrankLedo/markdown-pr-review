@@ -9,7 +9,6 @@ import {
   findPrNumber,
   fetchPrFiles,
   fetchPrComments,
-  fetchPrCommentCounts,
   fetchThreadMeta,
   type PrFilesResult,
 } from './GitHubClient';
@@ -62,16 +61,23 @@ export function activate(context: vscode.ExtensionContext): void {
             }
             const selectedFile = pickInitialFile(mdFiles, activeRelPath);
 
-            const [comments, counts, threadMetaResult] = await Promise.allSettled([
+            const [comments, threadMetaResult] = await Promise.allSettled([
               fetchPrComments(owner, repo, prNumber, selectedFile, token),
-              fetchPrCommentCounts(owner, repo, prNumber, token),
               fetchThreadMeta(owner, repo, prNumber, token),
             ]);
 
-            const commentCounts = counts.status === 'fulfilled' ? counts.value : {};
+            const allThreadMeta = threadMetaResult.status === 'fulfilled' ? threadMetaResult.value : [];
+            const openByFile: Record<string, number> = {};
+            const resolvedByFile: Record<string, number> = {};
+            for (const t of allThreadMeta) {
+              if (!t.path) continue;
+              if (t.isResolved) resolvedByFile[t.path] = (resolvedByFile[t.path] ?? 0) + 1;
+              else openByFile[t.path] = (openByFile[t.path] ?? 0) + 1;
+            }
             const prFiles: PrFile[] = mdFiles.map(p => ({
               path: p,
-              commentCount: commentCounts[p] ?? 0,
+              openCount: openByFile[p] ?? 0,
+              resolvedCount: resolvedByFile[p] ?? 0,
             }));
 
             const markdown = fs.readFileSync(path.join(repoRoot, selectedFile), 'utf8');
@@ -80,7 +86,7 @@ export function activate(context: vscode.ExtensionContext): void {
             panel.render(
               markdown,
               comments.status === 'fulfilled' ? comments.value : [],
-              threadMetaResult.status === 'fulfilled' ? threadMetaResult.value : [],
+              allThreadMeta,
               {
                 owner,
                 repo,

@@ -180,6 +180,7 @@ export async function fetchPrComments(
 interface GraphQLThreadNode {
   id: string;
   isResolved: boolean;
+  path: string;
   comments: { nodes: Array<{ databaseId: number }> };
 }
 
@@ -205,6 +206,7 @@ export async function fetchThreadMeta(
             nodes {
               id
               isResolved
+              path
               comments(first: 1) {
                 nodes { databaseId }
               }
@@ -225,6 +227,7 @@ export async function fetchThreadMeta(
       nodeId: n.id,
       isResolved: n.isResolved,
       rootCommentId: n.comments.nodes[0].databaseId,
+      path: n.path,
     }));
 }
 

@@ -140,7 +140,11 @@ export class ReviewPanel {
     }
 
     this._prFiles = this._prFiles.map(f =>
-      f.path === relPath ? { ...f, commentCount: comments.length } : f
+      f.path === relPath ? {
+        ...f,
+        openCount: threadMeta.filter(t => !t.isResolved).length,
+        resolvedCount: threadMeta.filter(t => t.isResolved).length,
+      } : f
     );
     this._filePath = relPath;
     this._draftComments = [];

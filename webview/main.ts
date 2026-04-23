@@ -36,11 +36,30 @@ function processComment(c: PRComment): PRComment {
   return { ...c, body: c.body.slice(0, m.index as number), line: parseInt(m[1], 10) };
 }
 
-function fileOptionLabel(filePath: string, allPaths: string[]): string {
+function fileShortName(filePath: string, allPaths: string[]): string {
   const base = filePath.split('/').pop()!;
   const hasDupe = allPaths.filter(p => p.split('/').pop() === base).length > 1;
-  if (!hasDupe) return base;
-  return filePath.split('/').slice(-2).join('/');
+  return hasDupe ? filePath.split('/').slice(-2).join('/') : base;
+}
+
+function fileOptionLabel(filePath: string, openCount: number, resolvedCount: number, allPaths: string[]): string {
+  const name = fileShortName(filePath, allPaths);
+  const total = openCount + resolvedCount;
+  if (total === 0) return name;
+  if (openCount > 0 && resolvedCount > 0) return `${name} (${openCount} open · ${resolvedCount} resolved)`;
+  if (openCount > 0) return `${name} (${openCount} open)`;
+  return `${name} (${resolvedCount} resolved)`;
+}
+
+function updateCurrentFileOption(): void {
+  const selectEl = document.querySelector<HTMLSelectElement>('.pr-file-select');
+  if (!selectEl) return;
+  const opt = selectEl.options[selectEl.selectedIndex];
+  if (!opt) return;
+  const allPaths = Array.from(selectEl.options).map(o => o.value);
+  const openCount = allThreadMeta.filter(t => !t.isResolved).length;
+  const resolvedCount = allThreadMeta.filter(t => t.isResolved).length;
+  opt.textContent = fileOptionLabel(opt.value, openCount, resolvedCount, allPaths);
 }
 
 function showToast(message: string): void {
@@ -212,6 +231,7 @@ window.addEventListener('message', (event: MessageEvent<ExtensionMessage>) => {
       m.nodeId === msg.threadNodeId ? { ...m, isResolved: true } : m
     );
     placeOverlaysKeepOpen();
+    updateCurrentFileOption();
     return;
   }
 
@@ -220,6 +240,7 @@ window.addEventListener('message', (event: MessageEvent<ExtensionMessage>) => {
       m.nodeId === msg.threadNodeId ? { ...m, isResolved: false } : m
     );
     placeOverlaysKeepOpen();
+    updateCurrentFileOption();
     return;
   }
 
@@ -258,12 +279,11 @@ async function handleRender(msg: RenderMessage): Promise<void> {
     headerEl.appendChild(selectEl);
   }
   selectEl.innerHTML = '';
+  const allPaths = msg.prFiles.map(x => x.path);
   for (const f of msg.prFiles) {
     const opt = document.createElement('option');
     opt.value = f.path;
-    opt.textContent = f.commentCount > 0
-      ? `● ${fileOptionLabel(f.path, msg.prFiles.map(x => x.path))}`
-      : fileOptionLabel(f.path, msg.prFiles.map(x => x.path));
+    opt.textContent = fileOptionLabel(f.path, f.openCount, f.resolvedCount, allPaths);
     opt.selected = f.path === msg.filePath;
     selectEl.appendChild(opt);
   }

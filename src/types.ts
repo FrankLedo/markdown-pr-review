@@ -12,11 +12,13 @@ export interface ThreadMeta {
   nodeId: string;
   isResolved: boolean;
   rootCommentId: number;
+  path?: string;
 }
 
 export interface PrFile {
   path: string;
-  commentCount: number;
+  openCount: number;
+  resolvedCount: number;
 }
 
 export interface RenderMessage {
