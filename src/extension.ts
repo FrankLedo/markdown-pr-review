@@ -27,7 +27,7 @@ async function refreshPrStatusBar(item: vscode.StatusBarItem): Promise<void> {
     if (!workspaceRoot) { item.hide(); return; }
     const { owner, repo, branch } = getGitContext(workspaceRoot);
     if (prStatusCache?.branch === branch) {
-      item.text = `$(git-pull-request) PR #${prStatusCache.prNumber}`;
+      item.text = `$(comment-discussion) PR #${prStatusCache.prNumber}`;
       item.show();
       return;
     }
@@ -35,7 +35,7 @@ async function refreshPrStatusBar(item: vscode.StatusBarItem): Promise<void> {
     if (!session) { item.hide(); return; }
     const { prNumber } = await findPrNumber(owner, repo, branch, session.accessToken);
     prStatusCache = { branch, prNumber };
-    item.text = `$(git-pull-request) PR #${prNumber}`;
+    item.text = `$(comment-discussion) PR #${prNumber}`;
     item.show();
   } catch {
     item.hide();
@@ -45,7 +45,7 @@ async function refreshPrStatusBar(item: vscode.StatusBarItem): Promise<void> {
 export function activate(context: vscode.ExtensionContext): void {
   const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
   statusBarItem.command = 'markdown-pr-review.openReview';
-  statusBarItem.tooltip = 'Open PR Review Panel';
+  statusBarItem.tooltip = 'Markdown PR Review';
   context.subscriptions.push(statusBarItem);
 
   context.subscriptions.push(
