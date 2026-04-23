@@ -14,11 +14,20 @@ export interface ThreadMeta {
   rootCommentId: number;
 }
 
+export interface PrFile {
+  path: string;
+  commentCount: number;
+}
+
 export interface RenderMessage {
   type: 'render';
   markdown: string;
   comments: PRComment[];
   threadMeta: ThreadMeta[];
+  owner: string;
+  repo: string;
+  prNumber: number;
+  prFiles: PrFile[];
   filePath: string;
   headSha: string;
   currentUserLogin: string;
@@ -27,6 +36,7 @@ export interface RenderMessage {
 // Messages sent from the webview to the extension host
 export type WebviewMessage =
   | { type: 'ready' }
+  | { type: 'switchFile'; path: string }
   | { type: 'postComment'; line: number; body: string; tempId: number }
   | { type: 'postReply'; inReplyToId: number; line: number; body: string; tempId: number }
   | { type: 'addToDraft'; line: number; body: string }

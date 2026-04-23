@@ -99,6 +99,11 @@ function mapComment(raw: GitHubReviewComment): PRComment {
   };
 }
 
+interface GitHubPRFile {
+  filename: string;
+  patch?: string;
+}
+
 // Returns 1-based line numbers visible on the RIGHT side of the diff for a file.
 // GitHub rejects inline comments on lines outside the diff context (422).
 function parseValidLines(patch: string): number[] {
@@ -114,20 +119,46 @@ function parseValidLines(patch: string): number[] {
   return lines;
 }
 
-export async function fetchValidLines(
+export interface PrFilesResult {
+  mdFiles: string[];
+  validLinesByPath: Map<string, number[]>;
+}
+
+export async function fetchPrFiles(
   owner: string,
   repo: string,
   prNumber: number,
-  filePath: string,
   token: string
-): Promise<number[]> {
-  const files = await githubRequest<Array<{ filename: string; patch?: string }>>(
+): Promise<PrFilesResult> {
+  const files = await githubRequest<GitHubPRFile[]>(
     `/repos/${owner}/${repo}/pulls/${prNumber}/files?per_page=100`,
     token
   );
-  const file = files.find(f => f.filename === filePath);
-  if (!file?.patch) return [];
-  return parseValidLines(file.patch);
+  const validLinesByPath = new Map<string, number[]>();
+  for (const f of files) {
+    if (f.patch) validLinesByPath.set(f.filename, parseValidLines(f.patch));
+  }
+  return {
+    mdFiles: files.map(f => f.filename).filter(f => f.endsWith('.md')),
+    validLinesByPath,
+  };
+}
+
+export async function fetchPrCommentCounts(
+  owner: string,
+  repo: string,
+  prNumber: number,
+  token: string
+): Promise<Record<string, number>> {
+  const raw = await githubRequest<Array<{ path: string; line: number | null }>>(
+    `/repos/${owner}/${repo}/pulls/${prNumber}/comments?per_page=100`,
+    token
+  );
+  const counts: Record<string, number> = {};
+  for (const c of raw) {
+    if (c.line != null) counts[c.path] = (counts[c.path] ?? 0) + 1;
+  }
+  return counts;
 }
 
 export async function fetchPrComments(

@@ -34,6 +34,13 @@ function processComment(c: PRComment): PRComment {
   return { ...c, body: c.body.slice(0, m.index as number), line: parseInt(m[1], 10) };
 }
 
+function fileOptionLabel(filePath: string, allPaths: string[]): string {
+  const base = filePath.split('/').pop()!;
+  const hasDupe = allPaths.filter(p => p.split('/').pop() === base).length > 1;
+  if (!hasDupe) return base;
+  return filePath.split('/').slice(-2).join('/');
+}
+
 function showToast(message: string): void {
   const toast = document.createElement('div');
   toast.className = 'pr-toast';
@@ -227,6 +234,28 @@ async function handleRender(msg: RenderMessage): Promise<void> {
   currentUserLogin = msg.currentUserLogin;
   allComments = msg.comments.map(processComment);
   allThreadMeta = [...msg.threadMeta];
+
+  // Build/update file-switcher dropdown in-place to avoid destroying NavStrip DOM
+  const headerEl = document.getElementById('review-header')!;
+  let selectEl = headerEl.querySelector<HTMLSelectElement>('.pr-file-select');
+  if (!selectEl) {
+    selectEl = document.createElement('select');
+    selectEl.className = 'pr-file-select';
+    selectEl.addEventListener('change', () => {
+      vscode.postMessage({ type: 'switchFile', path: selectEl!.value });
+    });
+    headerEl.appendChild(selectEl);
+  }
+  selectEl.innerHTML = '';
+  for (const f of msg.prFiles) {
+    const opt = document.createElement('option');
+    opt.value = f.path;
+    opt.textContent = f.commentCount > 0
+      ? `● ${fileOptionLabel(f.path, msg.prFiles.map(x => x.path))}`
+      : fileOptionLabel(f.path, msg.prFiles.map(x => x.path));
+    opt.selected = f.path === msg.filePath;
+    selectEl.appendChild(opt);
+  }
 
   contentEl.innerHTML = renderMarkdown(msg.markdown);
 

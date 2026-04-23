@@ -1,7 +1,10 @@
 import * as vscode from 'vscode';
-import type { PRComment, ThreadMeta, WebviewMessage } from './types';
+import * as path from 'path';
+import * as fs from 'fs';
+import type { PRComment, PrFile, RenderMessage, ThreadMeta, WebviewMessage } from './types';
 import { postComment, postReply, submitDraftReview, getGitHubToken,
-         editComment, deleteComment, resolveThread, unresolveThread } from './GitHubClient';
+         editComment, deleteComment, resolveThread, unresolveThread,
+         fetchPrComments, fetchThreadMeta } from './GitHubClient';
 
 function getNonce(): string {
   let text = '';
@@ -17,8 +20,10 @@ export interface PrContext {
   repo: string;
   prNumber: number;
   headSha: string;
+  repoRoot: string;
   filePath: string;
-  validLines: number[];
+  prFiles: PrFile[];
+  validLinesByPath: Map<string, number[]>;
   currentUserLogin: string;
 }
 
@@ -33,10 +38,13 @@ export class ReviewPanel {
   private _repo = '';
   private _prNumber = 0;
   private _headSha = '';
+  private _repoRoot = '';
   private _filePath = '';
-  private _validLines: number[] = [];
+  private _prFiles: PrFile[] = [];
+  private _validLinesByPath = new Map<string, number[]>();
+  private _currentUserLogin = '';
   private _draftComments: Array<{ line: number; body: string }> = [];
-  private _lastRenderMsg: object | undefined;
+  private _lastRenderMsg: RenderMessage | undefined;
 
   static createOrShow(extensionUri: vscode.Uri): ReviewPanel {
     const column = vscode.ViewColumn.Beside;
@@ -80,8 +88,11 @@ export class ReviewPanel {
     this._repo = ctx.repo;
     this._prNumber = ctx.prNumber;
     this._headSha = ctx.headSha;
+    this._repoRoot = ctx.repoRoot;
     this._filePath = ctx.filePath;
-    this._validLines = ctx.validLines;
+    this._prFiles = ctx.prFiles;
+    this._validLinesByPath = ctx.validLinesByPath;
+    this._currentUserLogin = ctx.currentUserLogin;
     this._draftComments = [];
 
     const fileName = ctx.filePath.split('/').pop() ?? ctx.filePath;
@@ -92,6 +103,10 @@ export class ReviewPanel {
       markdown,
       comments,
       threadMeta,
+      owner: ctx.owner,
+      repo: ctx.repo,
+      prNumber: ctx.prNumber,
+      prFiles: ctx.prFiles,
       filePath: ctx.filePath,
       headSha: ctx.headSha,
       currentUserLogin: ctx.currentUserLogin,
@@ -99,19 +114,68 @@ export class ReviewPanel {
     this._panel.webview.postMessage(this._lastRenderMsg);
   }
 
-  // Snap a 1-based line to the nearest diff-visible line.
+  private _updateCachedComments(updater: (comments: PRComment[]) => PRComment[]): void {
+    if (this._lastRenderMsg) {
+      this._lastRenderMsg = { ...this._lastRenderMsg, comments: updater(this._lastRenderMsg.comments) };
+    }
+  }
+
+  private async _loadAndRender(relPath: string): Promise<void> {
+    let markdown: string;
+    try {
+      markdown = fs.readFileSync(path.join(this._repoRoot, relPath), 'utf8');
+    } catch {
+      this._panel.webview.postMessage({ type: 'postError', message: `Could not read file: ${relPath}` });
+      return;
+    }
+
+    const { token } = await getGitHubToken();
+    const comments = await fetchPrComments(this._owner, this._repo, this._prNumber, relPath, token);
+
+    let threadMeta: ThreadMeta[] = [];
+    try {
+      threadMeta = await fetchThreadMeta(this._owner, this._repo, this._prNumber, token);
+    } catch (err) {
+      console.warn('fetchThreadMeta failed on switch:', err);
+    }
+
+    this._prFiles = this._prFiles.map(f =>
+      f.path === relPath ? { ...f, commentCount: comments.length } : f
+    );
+    this._filePath = relPath;
+    this._draftComments = [];
+
+    const fileName = relPath.split('/').pop() ?? relPath;
+    this._panel.title = `PR Review: ${fileName}`;
+
+    this._lastRenderMsg = {
+      type: 'render',
+      markdown,
+      comments,
+      threadMeta,
+      owner: this._owner,
+      repo: this._repo,
+      prNumber: this._prNumber,
+      prFiles: this._prFiles,
+      filePath: relPath,
+      headSha: this._headSha,
+      currentUserLogin: this._currentUserLogin,
+    };
+    this._panel.webview.postMessage(this._lastRenderMsg);
+  }
+
+  // Snap a 1-based line to the nearest diff-visible line for the given file.
   // Prefers at-or-above; falls back to nearest below when the target precedes all hunks.
   // GitHub rejects comments on lines outside the diff context (422).
-  private _snapToDiffLine(line: number): number {
-    if (this._validLines.length === 0) return line;
+  private _snapToDiffLine(filePath: string, line: number): number {
+    const valid = this._validLinesByPath.get(filePath);
+    if (!valid || valid.length === 0) return line;
     let best = -1;
-    for (const l of this._validLines) {
+    for (const l of valid) {
       if (l <= line && l > best) best = l;
     }
     if (best !== -1) return best;
-    return this._validLines.reduce((a, b) =>
-      Math.abs(b - line) < Math.abs(a - line) ? b : a
-    );
+    return valid.reduce((a, b) => Math.abs(b - line) < Math.abs(a - line) ? b : a);
   }
 
   private _snapSuffix(rawLine: number): string {
@@ -132,6 +196,11 @@ export class ReviewPanel {
       return;
     }
 
+    if (msg.type === 'switchFile') {
+      await this._loadAndRender(msg.path);
+      return;
+    }
+
     const tempId = (msg as { tempId?: number }).tempId;
 
     try {
@@ -139,7 +208,7 @@ export class ReviewPanel {
 
       if (msg.type === 'postComment') {
         const rawLine = msg.line + 1;
-        const snappedLine = this._snapToDiffLine(rawLine);
+        const snappedLine = this._snapToDiffLine(this._filePath, rawLine);
         const snapped = snappedLine !== rawLine;
         const postedBody = snapped ? `${msg.body}${this._snapSuffix(rawLine)}` : msg.body;
         const comment = await postComment(
@@ -148,6 +217,8 @@ export class ReviewPanel {
         );
         // Send webview the clean body + original line for correct bubble placement
         const displayComment = snapped ? { ...comment, body: msg.body, line: rawLine } : comment;
+        // Keep _lastRenderMsg in sync so re-shows after tab-switch include this comment
+        this._updateCachedComments(cs => [...cs, comment]);
         this._panel.webview.postMessage({
           type: 'commentPosted', comment: displayComment, tempId: msg.tempId, snapped,
         });
@@ -157,6 +228,7 @@ export class ReviewPanel {
           this._owner, this._repo, this._prNumber, token,
           { body: msg.body, inReplyToId: msg.inReplyToId, fallbackLine: msg.line }
         );
+        this._updateCachedComments(cs => [...cs, comment]);
         this._panel.webview.postMessage({ type: 'replyPosted', comment, tempId: msg.tempId });
 
       } else if (msg.type === 'addToDraft') {
@@ -165,7 +237,7 @@ export class ReviewPanel {
       } else if (msg.type === 'submitReview') {
         const preparedComments = this._draftComments.map(c => {
           const rawLine = c.line + 1;
-          const snappedLine = this._snapToDiffLine(rawLine);
+          const snappedLine = this._snapToDiffLine(this._filePath, rawLine);
           const snapped = snappedLine !== rawLine;
           return {
             path: this._filePath,
@@ -178,6 +250,7 @@ export class ReviewPanel {
           { commitId: this._headSha, comments: preparedComments }
         );
         this._draftComments = [];
+        this._updateCachedComments(cs => [...cs, ...comments]);
         // Strip metadata so webview places bubbles at original lines
         const displayComments = comments.map(c => {
           const { cleanBody, originalLine } = this._stripSnapSuffix(c.body);
@@ -187,10 +260,12 @@ export class ReviewPanel {
 
       } else if (msg.type === 'editComment') {
         const newBody = await editComment(this._owner, this._repo, msg.commentId, msg.body, token);
+        this._updateCachedComments(cs => cs.map(c => c.id === msg.commentId ? { ...c, body: newBody } : c));
         this._panel.webview.postMessage({ type: 'commentEdited', commentId: msg.commentId, body: newBody });
 
       } else if (msg.type === 'deleteComment') {
         await deleteComment(this._owner, this._repo, msg.commentId, token);
+        this._updateCachedComments(cs => cs.filter(c => c.id !== msg.commentId && c.in_reply_to_id !== msg.commentId));
         this._panel.webview.postMessage({ type: 'commentDeleted', commentId: msg.commentId });
 
       } else if (msg.type === 'resolveThread') {
@@ -494,6 +569,18 @@ export class ReviewPanel {
     .pr-nav-highlight {
       animation: pr-nav-highlight 600ms ease-out forwards;
     }
+    .pr-file-select {
+      font-size: 12px;
+      background: var(--vscode-dropdown-background, #3c3c3c);
+      color: var(--vscode-dropdown-foreground, #cccccc);
+      border: 1px solid var(--vscode-dropdown-border, rgba(255,255,255,0.1));
+      border-radius: 3px;
+      padding: 2px 6px;
+      flex: 0 0 auto;
+      max-width: 220px;
+      cursor: pointer;
+    }
+    .pr-file-select:focus { outline: 1px solid var(--vscode-focusBorder, #007acc); }
   </style>
 </head>
 <body>
