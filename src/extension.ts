@@ -25,18 +25,20 @@ async function refreshPrStatusBar(item: vscode.StatusBarItem): Promise<void> {
   try {
     const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
     if (!workspaceRoot) { item.hide(); return; }
-    const { owner, repo, branch } = getGitContext(workspaceRoot);
+    const { owner, repo, branch } = getGitContext(workspaceRoot); // throws if not a git repo
+    // Show immediately — we know we're in a GitHub repo
+    item.text = `$(comment-discussion) PR Review`;
+    item.show();
+    // Try to enrich with PR number silently
     if (prStatusCache?.branch === branch) {
       item.text = `$(comment-discussion) PR #${prStatusCache.prNumber}`;
-      item.show();
       return;
     }
     const session = await vscode.authentication.getSession('github', ['repo'], { createIfNone: false });
-    if (!session) { item.hide(); return; }
+    if (!session) return; // Keep showing generic label so user can click to authenticate
     const { prNumber } = await findPrNumber(owner, repo, branch, session.accessToken);
     prStatusCache = { branch, prNumber };
     item.text = `$(comment-discussion) PR #${prNumber}`;
-    item.show();
   } catch {
     item.hide();
   }
