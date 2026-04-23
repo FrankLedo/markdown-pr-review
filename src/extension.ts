@@ -8,6 +8,7 @@ import {
   getGitHubToken,
   findPrNumber,
   fetchPrComments,
+  fetchValidLines,
   fetchThreadMeta,
 } from './GitHubClient';
 
@@ -48,25 +49,28 @@ export function activate(context: vscode.ExtensionContext): void {
 
             const { token, userLogin } = await getGitHubToken();
             const { prNumber, headSha } = await findPrNumber(owner, repo, branch, token);
-            const comments = await fetchPrComments(owner, repo, prNumber, relPath, token);
 
-            // Non-fatal: if GraphQL fails, render without thread metadata
-            let threadMeta: ThreadMeta[] = [];
-            try {
-              threadMeta = await fetchThreadMeta(owner, repo, prNumber, token);
-            } catch (err) {
-              console.warn('fetchThreadMeta failed:', err);
-            }
+            const [comments, validLines, threadMetaResult] = await Promise.allSettled([
+              fetchPrComments(owner, repo, prNumber, relPath, token),
+              fetchValidLines(owner, repo, prNumber, relPath, token),
+              fetchThreadMeta(owner, repo, prNumber, token),
+            ]);
 
             const panel = ReviewPanel.createOrShow(context.extensionUri);
-            panel.render(markdown, comments, threadMeta, {
-              owner,
-              repo,
-              prNumber,
-              headSha,
-              filePath: relPath,
-              currentUserLogin: userLogin,
-            });
+            panel.render(
+              markdown,
+              comments.status === 'fulfilled' ? comments.value : [],
+              threadMetaResult.status === 'fulfilled' ? threadMetaResult.value : [],
+              {
+                owner,
+                repo,
+                prNumber,
+                headSha,
+                filePath: relPath,
+                validLines: validLines.status === 'fulfilled' ? validLines.value : [],
+                currentUserLogin: userLogin,
+              }
+            );
           }
         );
       } catch (err: unknown) {

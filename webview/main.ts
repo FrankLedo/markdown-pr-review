@@ -153,6 +153,7 @@ window.addEventListener('message', (event: MessageEvent<ExtensionMessage>) => {
   if (msg.type === 'commentPosted' || msg.type === 'replyPosted') {
     allComments = allComments.map(c => c.id === msg.tempId ? msg.comment : c);
     placeOverlaysKeepOpen();
+    if (msg.snapped) showToast('Comment anchored to nearest changed line above.');
     return;
   }
 

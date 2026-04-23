@@ -99,6 +99,37 @@ function mapComment(raw: GitHubReviewComment): PRComment {
   };
 }
 
+// Returns 1-based line numbers visible on the RIGHT side of the diff for a file.
+// GitHub rejects inline comments on lines outside the diff context (422).
+function parseValidLines(patch: string): number[] {
+  const lines: number[] = [];
+  let lineNum = 0;
+  for (const raw of patch.split('\n')) {
+    const m = raw.match(/^@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@/);
+    if (m) { lineNum = parseInt(m[1], 10) - 1; continue; }
+    if (raw.startsWith('-')) continue;
+    lineNum++;
+    lines.push(lineNum);
+  }
+  return lines;
+}
+
+export async function fetchValidLines(
+  owner: string,
+  repo: string,
+  prNumber: number,
+  filePath: string,
+  token: string
+): Promise<number[]> {
+  const files = await githubRequest<Array<{ filename: string; patch?: string }>>(
+    `/repos/${owner}/${repo}/pulls/${prNumber}/files?per_page=100`,
+    token
+  );
+  const file = files.find(f => f.filename === filePath);
+  if (!file?.patch) return [];
+  return parseValidLines(file.patch);
+}
+
 export async function fetchPrComments(
   owner: string,
   repo: string,

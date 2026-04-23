@@ -18,6 +18,7 @@ export interface PrContext {
   prNumber: number;
   headSha: string;
   filePath: string;
+  validLines: number[];
   currentUserLogin: string;
 }
 
@@ -33,6 +34,7 @@ export class ReviewPanel {
   private _prNumber = 0;
   private _headSha = '';
   private _filePath = '';
+  private _validLines: number[] = [];
   private _draftComments: Array<{ line: number; body: string }> = [];
   private _lastRenderMsg: object | undefined;
 
@@ -79,6 +81,7 @@ export class ReviewPanel {
     this._prNumber = ctx.prNumber;
     this._headSha = ctx.headSha;
     this._filePath = ctx.filePath;
+    this._validLines = ctx.validLines;
     this._draftComments = [];
 
     const fileName = ctx.filePath.split('/').pop() ?? ctx.filePath;
@@ -96,6 +99,18 @@ export class ReviewPanel {
     this._panel.webview.postMessage(this._lastRenderMsg);
   }
 
+  // Snap a 1-based line to the nearest diff-visible line at or above the target.
+  // GitHub rejects comments on lines outside the diff context (422).
+  // Always snaps up (never down) so the bubble doesn't land below the clicked content.
+  private _snapToDiffLine(line: number): number {
+    if (this._validLines.length === 0) return line;
+    let best = -1;
+    for (const l of this._validLines) {
+      if (l <= line && l > best) best = l;
+    }
+    return best !== -1 ? best : this._validLines[0];
+  }
+
   private async _handleMessage(msg: WebviewMessage): Promise<void> {
     if (msg.type === 'ready') {
       if (this._lastRenderMsg) {
@@ -110,11 +125,15 @@ export class ReviewPanel {
       const { token } = await getGitHubToken();
 
       if (msg.type === 'postComment') {
+        const rawLine = msg.line + 1;
+        const line = this._snapToDiffLine(rawLine);
         const comment = await postComment(
           this._owner, this._repo, this._prNumber, token,
-          { body: msg.body, commitId: this._headSha, path: this._filePath, line: msg.line + 1 }
+          { body: msg.body, commitId: this._headSha, path: this._filePath, line }
         );
-        this._panel.webview.postMessage({ type: 'commentPosted', comment, tempId: msg.tempId });
+        this._panel.webview.postMessage({
+          type: 'commentPosted', comment, tempId: msg.tempId, snapped: line !== rawLine,
+        });
 
       } else if (msg.type === 'postReply') {
         const comment = await postReply(
@@ -131,7 +150,11 @@ export class ReviewPanel {
           this._owner, this._repo, this._prNumber, token,
           {
             commitId: this._headSha,
-            comments: this._draftComments.map(c => ({ path: this._filePath, line: c.line + 1, body: c.body })),
+            comments: this._draftComments.map(c => ({
+              path: this._filePath,
+              line: this._snapToDiffLine(c.line + 1),
+              body: c.body,
+            })),
           }
         );
         this._draftComments = [];

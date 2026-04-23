@@ -39,8 +39,8 @@ export type WebviewMessage =
 // Messages sent from the extension host to the webview
 export type ExtensionMessage =
   | RenderMessage
-  | { type: 'commentPosted'; comment: PRComment; tempId: number }
-  | { type: 'replyPosted'; comment: PRComment; tempId: number }
+  | { type: 'commentPosted'; comment: PRComment; tempId: number; snapped?: boolean }
+  | { type: 'replyPosted'; comment: PRComment; tempId: number; snapped?: boolean }
   | { type: 'reviewSubmitted'; comments: PRComment[] }
   | { type: 'postError'; message: string; tempId?: number; source?: 'draft' | 'action' }
   | { type: 'commentEdited'; commentId: number; body: string }
