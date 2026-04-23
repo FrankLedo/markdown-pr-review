@@ -8,6 +8,7 @@ then use that PR's number to spot-check comment anchoring for each section.
 
 This is the first test paragraph. Leave a review comment here to verify that basic
 paragraph anchoring works — the comment bubble should appear inline next to this text.
+It should remain anchored even after the PR diff is applied.
 
 This is a second paragraph immediately below. It should have its own independent
 comment anchor, separate from the paragraph above.
@@ -33,6 +34,7 @@ A deeper heading to verify that anchor depth doesn't affect comment placement.
   - Nested item — verify nested list anchoring
   - Another nested item
 - Third item
+- Fourth item — added in this PR
 
 ## Ordered List
 
@@ -64,7 +66,7 @@ graph TD
     A[Open markdown file] --> B[Run Open Review Panel]
     B --> C[Panel renders with comment bubbles]
     C --> D[Click bubble to expand thread]
-    D --> E[Reply, edit, or resolve]
+    D --> E[Reply, edit, or resolve] --> F[Mark thread resolved]
 ```
 
 Comments on a Mermaid diagram anchor to the fence block (the whole diagram),
@@ -85,6 +87,7 @@ Text after the blockquote, to confirm the blockquote and this paragraph get sepa
 | Draft batching | ✅ Done | Submit as one review |
 | File switcher | ✅ Done | Dropdown in header |
 | Mermaid support | ✅ Done | Anchors to fence block |
+| Scroll sync | 🚧 Planned | Phase 4 |
 
 ## Edge Cases
 
@@ -99,3 +102,5 @@ A paragraph followed immediately by a list:
 > Second blockquote line.
 
 Final paragraph with no trailing newline.
+
+An additional edge case paragraph added by this PR to verify that new content at end-of-file anchors correctly.
