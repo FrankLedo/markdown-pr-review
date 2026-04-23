@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.4.0](https://github.com/FrankLedo/markdown-pr-review/compare/v1.3.0...v1.4.0) (2026-04-23)
+
+
+### Features
+
+* amber add-comment button and snap tooltip on non-diff lines ([1f3fc47](https://github.com/FrankLedo/markdown-pr-review/commit/1f3fc478d8769c8f7b82cceeaef8ecae755bcb5e))
+* render YAML front matter as styled key-value block ([bcd7c56](https://github.com/FrankLedo/markdown-pr-review/commit/bcd7c569307f885933213a33f124756ae1cf50e2))
+
+
+### Bug Fixes
+
+* simplify snap indicator — amber color and tooltip only, no line number ([12a3cfd](https://github.com/FrankLedo/markdown-pr-review/commit/12a3cfd3bc8c03f503d586139b5499e4dff31b24))
+
 ## [1.3.0](https://github.com/FrankLedo/markdown-pr-review/compare/v1.2.0...v1.3.0) (2026-04-23)
 
 
