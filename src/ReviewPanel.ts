@@ -555,24 +555,24 @@ export class ReviewPanel {
       align-items: center;
       gap: 5px;
     }
-    .pr-nav-count {
-      background: var(--vscode-badge-background, #4d4d4d);
-      color: var(--vscode-badge-foreground, #fff);
-      border-radius: 10px;
-      padding: 2px 8px;
-      font-size: 11px;
-    }
     .pr-nav-btn {
       background: rgba(255,255,255,0.08);
       border: none;
       color: var(--vscode-editor-foreground);
       border-radius: 3px;
-      padding: 2px 8px;
-      font-size: 12px;
+      padding: 1px 6px;
+      font-size: 11px;
       cursor: pointer;
       line-height: 1.4;
     }
     .pr-nav-btn:hover { background: rgba(255,255,255,0.15); }
+    .pr-nav-btn--action {
+      background: var(--vscode-badge-background, #4d4d4d);
+      color: var(--vscode-badge-foreground, #fff);
+      border-radius: 10px;
+      padding: 2px 8px;
+    }
+    .pr-nav-btn--action:hover { opacity: 0.85; background: var(--vscode-badge-background, #4d4d4d); }
     .pr-nav-counter {
       opacity: 0.6;
       font-size: 11px;

@@ -42,13 +42,20 @@ function fileShortName(filePath: string, allPaths: string[]): string {
   return hasDupe ? filePath.split('/').slice(-2).join('/') : base;
 }
 
-function fileOptionLabel(filePath: string, openCount: number, resolvedCount: number, allPaths: string[]): string {
-  const name = fileShortName(filePath, allPaths);
+function countSuffix(openCount: number, resolvedCount: number): string {
   const total = openCount + resolvedCount;
-  if (total === 0) return name;
-  if (openCount > 0 && resolvedCount > 0) return `${name} (${openCount} open, ${resolvedCount} resolved)`;
-  if (openCount > 0) return `${name} (${openCount} open)`;
-  return `${name} (${resolvedCount} resolved)`;
+  if (total === 0) return '';
+  if (openCount > 0 && resolvedCount > 0) return ` (${openCount} open, ${resolvedCount} resolved)`;
+  if (openCount > 0) return ` (${openCount} open)`;
+  return ` (${resolvedCount} resolved)`;
+}
+
+function fileOptionLabel(filePath: string, openCount: number, resolvedCount: number, allPaths: string[]): string {
+  return fileShortName(filePath, allPaths) + countSuffix(openCount, resolvedCount);
+}
+
+function fileFullLabel(filePath: string, openCount: number, resolvedCount: number): string {
+  return filePath + countSuffix(openCount, resolvedCount);
 }
 
 function updateCurrentFileOption(): void {
@@ -60,7 +67,10 @@ function updateCurrentFileOption(): void {
   const currentPath = opt.value;
   const openCount = allThreadMeta.filter(t => t.path === currentPath && !t.isResolved).length;
   const resolvedCount = allThreadMeta.filter(t => t.path === currentPath && t.isResolved).length;
-  opt.textContent = fileOptionLabel(opt.value, openCount, resolvedCount, allPaths);
+  const label = fileOptionLabel(opt.value, openCount, resolvedCount, allPaths);
+  opt.textContent = label;
+  opt.dataset.shortLabel = label;
+  opt.dataset.fullLabel = fileFullLabel(opt.value, openCount, resolvedCount);
 }
 
 function showToast(message: string): void {
@@ -277,6 +287,12 @@ async function handleRender(msg: RenderMessage): Promise<void> {
     selectEl.addEventListener('change', () => {
       vscode.postMessage({ type: 'switchFile', path: selectEl!.value });
     });
+    selectEl.addEventListener('mousedown', () => {
+      Array.from(selectEl!.options).forEach(o => { o.textContent = o.dataset.fullLabel ?? o.value; });
+    });
+    selectEl.addEventListener('blur', () => {
+      Array.from(selectEl!.options).forEach(o => { o.textContent = o.dataset.shortLabel ?? o.value; });
+    });
     headerEl.appendChild(selectEl);
   }
   selectEl.innerHTML = '';
@@ -284,7 +300,9 @@ async function handleRender(msg: RenderMessage): Promise<void> {
   for (const f of msg.prFiles) {
     const opt = document.createElement('option');
     opt.value = f.path;
-    opt.textContent = fileOptionLabel(f.path, f.openCount, f.resolvedCount, allPaths);
+    opt.dataset.shortLabel = fileOptionLabel(f.path, f.openCount, f.resolvedCount, allPaths);
+    opt.dataset.fullLabel = fileFullLabel(f.path, f.openCount, f.resolvedCount);
+    opt.textContent = opt.dataset.shortLabel;
     opt.selected = f.path === msg.filePath;
     selectEl.appendChild(opt);
   }
