@@ -30,8 +30,8 @@
     "comments"
   ],
   "categories": [
-    "Other",
-    "SCM Providers"
+    "SCM Providers",
+    "Visualization"
   ],
   "activationEvents": [
     "onStartupFinished"
@@ -41,7 +41,7 @@
     "commands": [
       {
         "command": "markdown-pr-review.openReview",
-        "title": "Open PR Review",
+        "title": "Markdown PR Review: Open Review Panel",
         "icon": "$(comment-discussion)"
       }
     ],

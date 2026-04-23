@@ -34,12 +34,6 @@ Opens a rendered preview of your markdown file with GitHub PR comment threads ov
 
 Uses VS Code's built-in GitHub authentication — you'll be prompted to sign in on first use. No configuration needed.
 
-To use a Personal Access Token instead, set it in your VS Code settings:
-
-```
-markdown-pr-review.githubToken
-```
-
 ## Requirements
 
 VS Code 1.85 or later.
