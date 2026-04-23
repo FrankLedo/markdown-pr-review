@@ -4,6 +4,18 @@ This file is the permanent manual test fixture for the Markdown PR Review extens
 It covers every element type the renderer supports. Open a PR that modifies this file,
 then use that PR's number to spot-check comment anchoring for each section.
 
+## Contents
+
+- [Paragraphs](#paragraphs)
+- [Headings](#headings)
+- [Unordered List](#unordered-list)
+- [Ordered List](#ordered-list)
+- [Fenced Code Block](#fenced-code-block)
+- [Mermaid Diagram](#mermaid-diagram)
+- [Blockquote](#blockquote)
+- [Table](#table)
+- [Edge Cases](#edge-cases)
+
 ## Paragraphs
 
 This is the first test paragraph. Leave a review comment here to verify that basic
