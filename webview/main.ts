@@ -46,7 +46,7 @@ function fileOptionLabel(filePath: string, openCount: number, resolvedCount: num
   const name = fileShortName(filePath, allPaths);
   const total = openCount + resolvedCount;
   if (total === 0) return name;
-  if (openCount > 0 && resolvedCount > 0) return `${name} (${openCount} open · ${resolvedCount} resolved)`;
+  if (openCount > 0 && resolvedCount > 0) return `${name} (${openCount} open, ${resolvedCount} resolved)`;
   if (openCount > 0) return `${name} (${openCount} open)`;
   return `${name} (${resolvedCount} resolved)`;
 }
