@@ -99,16 +99,29 @@ export class ReviewPanel {
     this._panel.webview.postMessage(this._lastRenderMsg);
   }
 
-  // Snap a 1-based line to the nearest diff-visible line at or above the target.
-  // Returns null if there is no valid line at or above (line is before all diff hunks).
+  // Snap a 1-based line to the nearest diff-visible line.
+  // Prefers at-or-above; falls back to nearest below when the target precedes all hunks.
   // GitHub rejects comments on lines outside the diff context (422).
-  private _snapToDiffLine(line: number): number | null {
+  private _snapToDiffLine(line: number): number {
     if (this._validLines.length === 0) return line;
     let best = -1;
     for (const l of this._validLines) {
       if (l <= line && l > best) best = l;
     }
-    return best !== -1 ? best : null;
+    if (best !== -1) return best;
+    return this._validLines.reduce((a, b) =>
+      Math.abs(b - line) < Math.abs(a - line) ? b : a
+    );
+  }
+
+  private _snapSuffix(rawLine: number): string {
+    return `\n\n---\n*Comment on line ${rawLine}*`;
+  }
+
+  private _stripSnapSuffix(body: string): { cleanBody: string; originalLine: number | null } {
+    const m = body.match(/\n\n---\n\*Comment on line (\d+)\*$/);
+    if (!m) return { cleanBody: body, originalLine: null };
+    return { cleanBody: body.slice(0, m.index), originalLine: parseInt(m[1], 10) };
   }
 
   private async _handleMessage(msg: WebviewMessage): Promise<void> {
@@ -126,19 +139,17 @@ export class ReviewPanel {
 
       if (msg.type === 'postComment') {
         const rawLine = msg.line + 1;
-        const line = this._snapToDiffLine(rawLine);
-        if (line === null) {
-          this._panel.webview.postMessage({
-            type: 'postError', message: 'This line isn\'t near any changes in the diff. Try commenting on a changed line.', tempId,
-          });
-          return;
-        }
+        const snappedLine = this._snapToDiffLine(rawLine);
+        const snapped = snappedLine !== rawLine;
+        const postedBody = snapped ? `${msg.body}${this._snapSuffix(rawLine)}` : msg.body;
         const comment = await postComment(
           this._owner, this._repo, this._prNumber, token,
-          { body: msg.body, commitId: this._headSha, path: this._filePath, line }
+          { body: postedBody, commitId: this._headSha, path: this._filePath, line: snappedLine }
         );
+        // Send webview the clean body + original line for correct bubble placement
+        const displayComment = snapped ? { ...comment, body: msg.body, line: rawLine } : comment;
         this._panel.webview.postMessage({
-          type: 'commentPosted', comment, tempId: msg.tempId, snapped: line !== rawLine,
+          type: 'commentPosted', comment: displayComment, tempId: msg.tempId, snapped,
         });
 
       } else if (msg.type === 'postReply') {
@@ -152,17 +163,27 @@ export class ReviewPanel {
         this._draftComments.push({ line: msg.line, body: msg.body });
 
       } else if (msg.type === 'submitReview') {
+        const preparedComments = this._draftComments.map(c => {
+          const rawLine = c.line + 1;
+          const snappedLine = this._snapToDiffLine(rawLine);
+          const snapped = snappedLine !== rawLine;
+          return {
+            path: this._filePath,
+            line: snappedLine,
+            body: snapped ? `${c.body}${this._snapSuffix(rawLine)}` : c.body,
+          };
+        });
         const comments = await submitDraftReview(
           this._owner, this._repo, this._prNumber, token,
-          {
-            commitId: this._headSha,
-            comments: this._draftComments
-              .map(c => ({ path: this._filePath, line: this._snapToDiffLine(c.line + 1), body: c.body }))
-              .filter((c): c is { path: string; line: number; body: string } => c.line !== null),
-          }
+          { commitId: this._headSha, comments: preparedComments }
         );
         this._draftComments = [];
-        this._panel.webview.postMessage({ type: 'reviewSubmitted', comments });
+        // Strip metadata so webview places bubbles at original lines
+        const displayComments = comments.map(c => {
+          const { cleanBody, originalLine } = this._stripSnapSuffix(c.body);
+          return originalLine ? { ...c, body: cleanBody, line: originalLine } : c;
+        });
+        this._panel.webview.postMessage({ type: 'reviewSubmitted', comments: displayComments });
 
       } else if (msg.type === 'editComment') {
         const newBody = await editComment(this._owner, this._repo, msg.commentId, msg.body, token);

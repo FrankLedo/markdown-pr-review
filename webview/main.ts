@@ -26,6 +26,14 @@ function countThreads(): number {
   return document.querySelectorAll<HTMLElement>('[data-thread-id]').length;
 }
 
+const LINE_META_RE = /\n\n---\n\*Comment on line (\d+)\*$/;
+
+function processComment(c: PRComment): PRComment {
+  const m = c.body.match(LINE_META_RE);
+  if (!m) return c;
+  return { ...c, body: c.body.slice(0, m.index as number), line: parseInt(m[1], 10) };
+}
+
 function showToast(message: string): void {
   const toast = document.createElement('div');
   toast.className = 'pr-toast';
@@ -151,23 +159,27 @@ window.addEventListener('message', (event: MessageEvent<ExtensionMessage>) => {
   if (!contentEl) return;
 
   if (msg.type === 'commentPosted' || msg.type === 'replyPosted') {
-    allComments = allComments.map(c => c.id === msg.tempId ? msg.comment : c);
+    allComments = allComments.map(c => c.id === msg.tempId ? processComment(msg.comment) : c);
     placeOverlaysKeepOpen();
-    if (msg.snapped) showToast('Comment anchored to nearest changed line above.');
+    if (msg.snapped) showToast('Not on a changed line — anchored nearby. Original line noted in comment.');
     return;
   }
 
   if (msg.type === 'reviewSubmitted') {
-    allComments = [...allComments, ...msg.comments];
+    allComments = [...allComments, ...msg.comments.map(processComment)];
     draft?.clear();
     placeOverlaysKeepOpen();
     return;
   }
 
   if (msg.type === 'commentEdited') {
-    allComments = allComments.map(c =>
-      c.id === msg.commentId ? { ...c, body: msg.body } : c
-    );
+    allComments = allComments.map(c => {
+      if (c.id !== msg.commentId) return c;
+      const m = msg.body.match(LINE_META_RE);
+      return m
+        ? { ...c, body: msg.body.slice(0, m.index as number), line: parseInt(m[1], 10) }
+        : { ...c, body: msg.body };
+    });
     placeOverlaysKeepOpen();
     return;
   }
@@ -213,7 +225,7 @@ async function handleRender(msg: RenderMessage): Promise<void> {
   if (!contentEl) return;
 
   currentUserLogin = msg.currentUserLogin;
-  allComments = [...msg.comments];
+  allComments = msg.comments.map(processComment);
   allThreadMeta = [...msg.threadMeta];
 
   contentEl.innerHTML = renderMarkdown(msg.markdown);

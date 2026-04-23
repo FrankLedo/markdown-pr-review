@@ -15,6 +15,7 @@ Opens a rendered preview of your markdown file with GitHub PR comment threads ov
 ## Features
 
 - **Inline comment threads** anchored to the rendered line via source maps
+- **Comment anywhere** — select any line, even outside the diff; the comment is anchored to the nearest changed line and the original line is noted in the comment body
 - **Full thread lifecycle** — reply, edit, delete, resolve, unresolve
 - **Draft review batching** — accumulate comments and submit as one review
 - **Mermaid diagram support** — comments anchor to the fence block; diagrams render in VS Code's light or dark theme
