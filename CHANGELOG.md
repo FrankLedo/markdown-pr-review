@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.5.0](https://github.com/FrankLedo/markdown-pr-review/compare/v1.4.0...v1.5.0) (2026-04-23)
+
+
+### Features
+
+* pill-style Expand/Close buttons; full path dropdown on open ([9a1dd77](https://github.com/FrankLedo/markdown-pr-review/commit/9a1dd7706af7ee7d017995b29fd7ea6017cba3af))
+
+
+### Bug Fixes
+
+* activate on startup so status bar appears without running command ([1dd0824](https://github.com/FrankLedo/markdown-pr-review/commit/1dd082408b217c3a158e8cf577b05336dad75f77))
+* activate on startup so status bar appears without running command ([5181888](https://github.com/FrankLedo/markdown-pr-review/commit/5181888b828e9653ddf37877aa0bb38abe6054d0))
+* filter thread counts by file path in dropdown labels ([137a7e3](https://github.com/FrankLedo/markdown-pr-review/commit/137a7e38cd4a3db8d2aa5286566d32252075fc60))
+* refresh status bar on git branch change, not just editor switch ([22aa7c3](https://github.com/FrankLedo/markdown-pr-review/commit/22aa7c3864d48cd62c92df2255db9a9004435097))
+* refresh status bar on git branch change, not just editor switch ([ccbd119](https://github.com/FrankLedo/markdown-pr-review/commit/ccbd1190ff7c85c66c8413dc8ec2b290f9d4a654))
+* show status bar in any git repo before auth is available ([818f97d](https://github.com/FrankLedo/markdown-pr-review/commit/818f97db0ddcdf41e61a0a6bca43a05757dbdc55))
+* status bar tooltip and icon match extension name and command palette ([4e4e95c](https://github.com/FrankLedo/markdown-pr-review/commit/4e4e95cc1cd7c553ea47e13a20aeafdceeaef55f))
+* status bar tooltip and icon match extension name and command palette ([ad9cfb8](https://github.com/FrankLedo/markdown-pr-review/commit/ad9cfb8bcc13d328b23e118b032c58ac077a8e7a))
+* status bar tooltip and icon match extension name and command palette ([7ce22ea](https://github.com/FrankLedo/markdown-pr-review/commit/7ce22ea35a8a73363892a74dc15e27df166fa389))
+* status bar tooltip and icon match extension name and command palette ([65e7c2c](https://github.com/FrankLedo/markdown-pr-review/commit/65e7c2c965e083cbb2b2382e712862067779faa7))
+
 ## [1.4.0](https://github.com/FrankLedo/markdown-pr-review/compare/v1.3.0...v1.4.0) (2026-04-23)
 
 

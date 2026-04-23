@@ -2,7 +2,7 @@
   "name": "markdown-pr-review",
   "displayName": "Markdown PR Review",
   "description": "Read and review GitHub PR comments on rendered markdown — inline threads, Mermaid diagrams, full thread lifecycle",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "publisher": "frankledo",
   "icon": "images/icon.png",
   "galleryBanner": {
@@ -33,7 +33,9 @@
     "Other",
     "SCM Providers"
   ],
-  "activationEvents": ["onStartupFinished"],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
