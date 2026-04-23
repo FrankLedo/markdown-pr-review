@@ -22,25 +22,24 @@ let prStatusCache: { branch: string; prNumber: number } | undefined;
 let statusBarDebounce: ReturnType<typeof setTimeout> | undefined;
 
 async function refreshPrStatusBar(item: vscode.StatusBarItem): Promise<void> {
+  const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+  if (!workspaceRoot) { item.hide(); return; }
+  // Show immediately — only hide if there is no workspace at all
+  item.text = `$(comment-discussion) PR Review`;
+  item.show();
   try {
-    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-    if (!workspaceRoot) { item.hide(); return; }
-    const { owner, repo, branch } = getGitContext(workspaceRoot); // throws if not a git repo
-    // Show immediately — we know we're in a GitHub repo
-    item.text = `$(comment-discussion) PR Review`;
-    item.show();
-    // Try to enrich with PR number silently
+    const { owner, repo, branch } = getGitContext(workspaceRoot);
     if (prStatusCache?.branch === branch) {
       item.text = `$(comment-discussion) PR #${prStatusCache.prNumber}`;
       return;
     }
     const session = await vscode.authentication.getSession('github', ['repo'], { createIfNone: false });
-    if (!session) return; // Keep showing generic label so user can click to authenticate
+    if (!session) return;
     const { prNumber } = await findPrNumber(owner, repo, branch, session.accessToken);
     prStatusCache = { branch, prNumber };
     item.text = `$(comment-discussion) PR #${prNumber}`;
   } catch {
-    item.hide();
+    // Keep showing generic label — don't hide on git/auth/PR lookup failure
   }
 }
 
