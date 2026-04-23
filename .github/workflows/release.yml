@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   release_please:
@@ -21,7 +22,7 @@ jobs:
 
   publish:
     needs: release_please
-    if: needs.release_please.outputs.release_created
+    if: needs.release_please.outputs.release_created || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     env:
       VSCE_PAT: ${{ secrets.VSCE_PAT }}
