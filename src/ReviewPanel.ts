@@ -569,7 +569,7 @@ export class ReviewPanel {
     [data-tooltip]::after {
       content: attr(data-tooltip);
       position: absolute;
-      bottom: calc(100% + 5px);
+      top: calc(100% + 5px);
       left: 50%;
       transform: translateX(-50%);
       background: var(--vscode-editorHoverWidget-background, #252526);
