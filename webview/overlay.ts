@@ -107,7 +107,7 @@ export function placeOverlays(
   threadMeta: ThreadMeta[],
   callbacks?: OverlayCallbacks
 ): void {
-  container.querySelectorAll('.pr-bubble, .pr-thread').forEach(el => el.remove());
+  container.querySelectorAll('.pr-bubble, .pr-bubble-cell, .pr-thread, .pr-table-thread-row').forEach(el => el.remove());
   if (comments.length === 0) return;
   const threads = buildThreads(comments);
   for (const thread of threads) {
@@ -115,10 +115,18 @@ export function placeOverlays(
     if (!anchor) continue;
     const meta = threadMeta.find(m => m.rootCommentId === thread.rootId);
     const bubble = createBubble(thread, meta, callbacks);
-    const floatTarget = anchor.tagName.toLowerCase() === 'li'
-      ? ((anchor.querySelector(':scope > p') as HTMLElement) ?? anchor)
-      : anchor;
-    floatTarget.prepend(bubble);
+    const tr = anchor.closest('tr') as HTMLElement | null;
+    if (tr) {
+      const cell = document.createElement('td');
+      cell.className = 'pr-bubble-cell';
+      tr.appendChild(cell);
+      cell.appendChild(bubble);
+    } else if (anchor.tagName.toLowerCase() === 'li') {
+      const floatTarget = (anchor.querySelector(':scope > p') as HTMLElement) ?? anchor;
+      floatTarget.prepend(bubble);
+    } else {
+      anchor.prepend(bubble);
+    }
   }
 }
 

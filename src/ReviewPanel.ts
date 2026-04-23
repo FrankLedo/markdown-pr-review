@@ -606,6 +606,14 @@ export class ReviewPanel {
       animation: pr-nav-highlight 600ms ease-out forwards;
     }
     .pr-table-thread-row td { border: none !important; padding: 0 !important; }
+    .pr-bubble-cell {
+      width: 1px;
+      white-space: nowrap;
+      padding: 2px 6px !important;
+      vertical-align: middle;
+      border: none !important;
+    }
+    .pr-bubble-cell .pr-bubble { float: none; margin-left: 0; }
     .pr-file-select {
       font-size: 12px;
       background: var(--vscode-dropdown-background, #3c3c3c);
