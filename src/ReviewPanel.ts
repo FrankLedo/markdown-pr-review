@@ -338,6 +338,7 @@ export class ReviewPanel {
       display: flex;
       align-items: center;
       justify-content: flex-end;
+      gap: 8px;
     }
     #review-header:empty { display: none; }
     #content { max-width: 800px; margin: 0 auto; padding: 20px; }
@@ -564,6 +565,26 @@ export class ReviewPanel {
       line-height: 1.4;
     }
     .pr-nav-btn:hover { background: rgba(255,255,255,0.15); }
+    [data-tooltip] { position: relative; }
+    [data-tooltip]::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: calc(100% + 5px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--vscode-editorHoverWidget-background, #252526);
+      color: var(--vscode-editorHoverWidget-foreground, #cccccc);
+      border: 1px solid var(--vscode-editorHoverWidget-border, rgba(255,255,255,0.15));
+      border-radius: 3px;
+      padding: 3px 8px;
+      font-size: 11px;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s;
+      z-index: 1000;
+    }
+    [data-tooltip]:hover::after { opacity: 1; }
     .pr-nav-btn--action {
       background: var(--vscode-badge-background, #4d4d4d);
       color: var(--vscode-badge-foreground, #fff);
