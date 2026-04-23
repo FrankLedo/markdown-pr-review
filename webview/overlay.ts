@@ -186,9 +186,7 @@ export function initSelectionHandlers(
     const btn = document.createElement('button');
     btn.className = snapTarget !== null ? 'pr-add-btn pr-add-btn--snap' : 'pr-add-btn';
     btn.textContent = '+ Add comment';
-    btn.title = snapTarget !== null
-      ? `Line ${resolved.line} is outside the diff — will anchor to line ${snapTarget}`
-      : '';
+    btn.title = snapTarget !== null ? 'Line is outside the diff' : '';
     btn.style.left = '0px';
     btn.style.top = `${rect.top - 34}px`;
 
@@ -226,7 +224,7 @@ export function initSelectionHandlers(
     const item = document.createElement('div');
     item.className = 'pr-context-item';
     item.textContent = snapTarget !== null
-      ? `+ Add comment (anchors to line ${snapTarget})`
+      ? '+ Add comment (outside diff)'
       : '+ Add comment';
     item.addEventListener('click', () => {
       removeContextMenu();
