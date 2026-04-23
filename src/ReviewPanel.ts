@@ -157,6 +157,7 @@ export class ReviewPanel {
       repo: this._repo,
       prNumber: this._prNumber,
       prFiles: this._prFiles,
+      validLines: this._validLinesByPath.get(relPath) ?? [],
       filePath: relPath,
       headSha: this._headSha,
       currentUserLogin: this._currentUserLogin,
@@ -405,6 +406,10 @@ export class ReviewPanel {
       z-index: 200; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
     }
     .pr-add-btn:hover { opacity: 0.9; }
+    .pr-add-btn--snap {
+      background: var(--vscode-statusBarItem-warningBackground, #854800);
+      color: var(--vscode-statusBarItem-warningForeground, #fff);
+    }
     .pr-context-menu {
       position: fixed;
       background: var(--vscode-menu-background, #2d2d2d);

@@ -28,6 +28,7 @@ export interface RenderMessage {
   repo: string;
   prNumber: number;
   prFiles: PrFile[];
+  validLines: number[];
   filePath: string;
   headSha: string;
   currentUserLogin: string;
