@@ -44,13 +44,6 @@
       }
     ],
     "menus": {
-      "editor/title": [
-        {
-          "command": "markdown-pr-review.openReview",
-          "when": "editorLangId == markdown",
-          "group": "navigation"
-        }
-      ],
       "editor/context": [
         {
           "command": "markdown-pr-review.openReview",

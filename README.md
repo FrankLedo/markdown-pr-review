@@ -23,10 +23,9 @@ Opens a rendered preview of your markdown file with GitHub PR comment threads ov
 
 ## Usage
 
-1. Open any markdown file that belongs to a GitHub PR
-2. Click the **comment icon** in the editor title bar, right-click → **Open PR Review**, or run `Open PR Review` from the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) if the icon doesn't appear
-3. Enter the PR number
-4. Browse the rendered preview with comment threads overlaid
+1. Switch to a PR branch in a repository with an open GitHub PR
+2. Click the **$(comment-discussion) PR #N** item in the status bar (bottom right), or run `Open PR Review` from the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`), or right-click any markdown file → **Open PR Review**
+3. Browse the rendered preview with comment threads overlaid
 
 ## Authentication
 
