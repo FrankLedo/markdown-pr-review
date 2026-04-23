@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.3.0](https://github.com/FrankLedo/markdown-pr-review/compare/v1.2.0...v1.3.0) (2026-04-23)
+
+
+### Features
+
+* allow comments on any line; annotate non-diff lines with original position ([8a3777c](https://github.com/FrankLedo/markdown-pr-review/commit/8a3777ce8cb25fa06813b637d8406520599e726d))
+* inline comments on any line, file-switcher dropdown, table thread rows ([455bd15](https://github.com/FrankLedo/markdown-pr-review/commit/455bd15060dbf05c7f09dbb76912d6c231f5e24a))
+* inline comments on any line, file-switcher dropdown, table thread rows ([455bd15](https://github.com/FrankLedo/markdown-pr-review/commit/455bd15060dbf05c7f09dbb76912d6c231f5e24a))
+* restore file-switcher dropdown; fix comment persistence on tab switch ([624298e](https://github.com/FrankLedo/markdown-pr-review/commit/624298e197a758ceda4d56bee4e7e7a6cff2e966))
+
+
+### Bug Fixes
+
+* block comments before first diff hunk instead of jumping down ([da0f4c5](https://github.com/FrankLedo/markdown-pr-review/commit/da0f4c50838354b5093b2ec20e10bbe3a0a1d91c))
+* render thread panels and compose boxes as full-width table rows ([d85456b](https://github.com/FrankLedo/markdown-pr-review/commit/d85456b9993af9ebb13a30086df880bd0ce74185))
+* snap comment line up to nearest diff-visible line; show toast when snapped ([719fe03](https://github.com/FrankLedo/markdown-pr-review/commit/719fe035e0536dbe99fcd8db075cae41a91ee19b))
+
 ## [1.2.0](https://github.com/FrankLedo/markdown-pr-review/compare/v1.1.3...v1.2.0) (2026-04-22)
 
 
