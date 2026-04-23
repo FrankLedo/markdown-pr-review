@@ -16,6 +16,7 @@ const vscode = acquireVsCodeApi();
 
 let allComments: PRComment[] = [];
 let allThreadMeta: ThreadMeta[] = [];
+let validLines: number[] = [];
 let currentUserLogin = '';
 let draft!: DraftManager;
 let contentEl: HTMLElement | null = null;
@@ -243,6 +244,7 @@ async function handleRender(msg: RenderMessage): Promise<void> {
   currentUserLogin = msg.currentUserLogin;
   allComments = msg.comments.map(processComment);
   allThreadMeta = [...msg.threadMeta];
+  validLines = msg.validLines ?? [];
 
   // Build/update file-switcher dropdown in-place to avoid destroying NavStrip DOM
   const headerEl = document.getElementById('review-header')!;
@@ -300,7 +302,7 @@ async function handleRender(msg: RenderMessage): Promise<void> {
   draft = new DraftManager(vscode, header);
 
   if (!selectionHandlersReady) {
-    initSelectionHandlers(contentEl, onAddComment);
+    initSelectionHandlers(contentEl, onAddComment, () => validLines);
     // VS Code webviews intercept all link navigation including #anchor same-page
     // links. Handle them manually so TOC links scroll to the correct heading.
     document.addEventListener('click', (e) => {
