@@ -15,3 +15,5 @@ images/*.svg
 *.vsix
 test/**
 *.code-workspace
+.claude/**
+.superpowers/**
