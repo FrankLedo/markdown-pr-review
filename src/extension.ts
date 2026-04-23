@@ -36,7 +36,7 @@ async function refreshPrStatusBar(item: vscode.StatusBarItem): Promise<void> {
     const session = await vscode.authentication.getSession('github', ['repo'], { createIfNone: false });
     if (!session) {
       // No auth yet — show generic so user can click to authenticate
-      item.text = `$(comment-discussion) MD PR Review`;
+      item.text = `$(comment-discussion) Markdown PR Review`;
       item.show();
       return;
     }
