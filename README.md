@@ -12,6 +12,8 @@ Opens a rendered preview of your markdown file with GitHub PR comment threads ov
 
 ![Rendered markdown with inline PR comment threads](images/screenshot-main.png)
 
+![Mermaid diagram with anchored comment bubbles](images/screenshot-mermaid.png)
+
 ## Features
 
 - **Inline comment threads** anchored to the rendered line via source maps
