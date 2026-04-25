@@ -10,9 +10,7 @@ Reviewing long-form markdown (design docs, RFCs, runbooks, architecture notes) t
 
 Opens a rendered preview of your markdown file with GitHub PR comment threads overlaid inline — anchored to the exact rendered element they were left on. No raw syntax. No tab switching.
 
-![Rendered markdown with inline PR comment threads](images/screenshot-main.png)
-
-![Mermaid diagram with anchored comment bubbles](images/screenshot-mermaid.png)
+![Markdown PR Review in action](images/demo.gif)
 
 ## Features
 
