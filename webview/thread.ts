@@ -291,6 +291,9 @@ function showAsPopover(bubble: HTMLElement, panel: HTMLElement): void {
     arrowClass = 'pr-popover-arrow pr-popover-arrow--right';
   }
 
+  // Clamp left to prevent off-screen when flipping to left
+  left = Math.max(GAP, left);
+
   const top = Math.max(GAP, Math.min(
     bubbleRect.top + bubbleRect.height / 2 - wRect.height / 2,
     vh - wRect.height - GAP
@@ -298,9 +301,20 @@ function showAsPopover(bubble: HTMLElement, panel: HTMLElement): void {
 
   wrapper.style.cssText = `position:fixed;z-index:9999;left:${left}px;top:${top}px;`;
   arrow.className = arrowClass;
-  arrow.style.cssText = `top:${bubbleRect.top + bubbleRect.height / 2 - top - 5}px;`;
+
+  // Clamp arrow top to stay within bounds
+  const arrowTop = Math.max(0, Math.min(
+    bubbleRect.top + bubbleRect.height / 2 - top - 5,
+    wRect.height - 10
+  ));
+  arrow.style.cssText = `top:${arrowTop}px;`;
 
   const dismiss = (e: MouseEvent): void => {
+    // Check if wrapper is still connected to DOM; if not, cleanup listener
+    if (!wrapper.isConnected) {
+      document.removeEventListener('click', dismiss);
+      return;
+    }
     if (!wrapper.contains(e.target as Node) && e.target !== bubble) {
       wrapper.remove();
       document.removeEventListener('click', dismiss);
