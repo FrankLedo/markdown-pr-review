@@ -30,5 +30,11 @@ assert.equal(extractSequenceActor('    User->>Extension: Open Review Panel'), 'U
 assert.equal(extractSequenceActor('    Note over User: text'), null);
 assert.equal(extractSequenceActor('    loop Every second'), null);
 assert.equal(extractSequenceActor(''), null);
+// -x arrow (single-dash cross)
+assert.equal(extractSequenceActor('    Alice-xBob: message'), 'Alice');
+// quoted name with alias → return alias
+assert.equal(extractSequenceActor('    participant "Web Browser" as wb'), 'wb');
+// quoted name without alias → null (text search will handle)
+assert.equal(extractSequenceActor('    participant "Web Browser"'), null);
 
 console.log('All diagram-anchors tests passed ✓');
