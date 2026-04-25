@@ -1,5 +1,6 @@
 import { renderMarkdown } from './renderer';
 import { placeOverlays, initSelectionHandlers, type OverlayCallbacks } from './overlay';
+import { resolveDiagramAnchors, type Point } from './diagram-anchors';
 import { createComposeBox } from './compose';
 import { DraftManager } from './draft';
 import { NavStrip } from './nav';
@@ -23,6 +24,7 @@ let contentEl: HTMLElement | null = null;
 let selectionHandlersReady = false;
 let openThreadIds: Set<number> = new Set();
 let navStrip: NavStrip | undefined;
+let diagramAnchors: Map<number, Point> = new Map();
 
 function countThreads(): number {
   return document.querySelectorAll<HTMLElement>('[data-thread-id]').length;
@@ -82,7 +84,7 @@ function showToast(message: string): void {
 }
 
 function placeOverlaysKeepOpen(): void {
-  placeOverlays(contentEl!, allComments, allThreadMeta, buildCallbacks());
+  placeOverlays(contentEl!, allComments, allThreadMeta, buildCallbacks(), diagramAnchors);
   navStrip?.refresh(countThreads());
   document.querySelectorAll<HTMLElement>('[data-thread-id]').forEach(bubble => {
     if (openThreadIds.has(Number(bubble.dataset.threadId))) bubble.click();
@@ -316,11 +318,15 @@ async function handleRender(msg: RenderMessage): Promise<void> {
   mermaid.initialize({ startOnLoad: false, theme: isDark ? 'dark' : 'default' });
 
   const mermaidNodes = contentEl.querySelectorAll<HTMLElement>('.mermaid');
+  const mermaidSources = new Map<HTMLElement, string>();
+  mermaidNodes.forEach(el => mermaidSources.set(el, el.textContent?.trim() ?? ''));
+
   if (mermaidNodes.length > 0) {
     await mermaid.run({ nodes: mermaidNodes });
   }
 
-  placeOverlays(contentEl, allComments, allThreadMeta, buildCallbacks());
+  diagramAnchors = resolveDiagramAnchors(contentEl, allComments, mermaidSources);
+  placeOverlays(contentEl, allComments, allThreadMeta, buildCallbacks(), diagramAnchors);
 
   const header = document.getElementById('review-header')!;
   if (!navStrip) {
