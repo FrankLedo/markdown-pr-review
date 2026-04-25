@@ -1,4 +1,6 @@
 .DS_Store
+images/*.mp4
+images/*.mov
 *.code-workspace
 .nyc_output/
 .vscode-test/
