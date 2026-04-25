@@ -1,4 +1,5 @@
 import type { PRComment, ThreadMeta } from '../src/types';
+import type { Point } from './diagram-anchors';
 import { toggleThread, type OnReply, type ThreadOptions } from './thread';
 
 interface Thread {
@@ -50,7 +51,8 @@ export function findAnchorElement(container: HTMLElement, line: number): HTMLEle
 function createBubble(
   thread: Thread,
   meta: ThreadMeta | undefined,
-  callbacks?: OverlayCallbacks
+  callbacks?: OverlayCallbacks,
+  isDiagram = false
 ): HTMLElement {
   const isResolved = meta?.isResolved ?? false;
 
@@ -89,6 +91,7 @@ function createBubble(
     onUnresolve: callbacks?.onUnresolve,
     onEdit: callbacks?.onEdit,
     onDelete: callbacks?.onDelete,
+    placement: isDiagram ? 'popover' : 'inline',
   };
 
   bubble.addEventListener('click', (e) => {
@@ -105,20 +108,47 @@ export function placeOverlays(
   container: HTMLElement,
   comments: PRComment[],
   threadMeta: ThreadMeta[],
-  callbacks?: OverlayCallbacks
+  callbacks?: OverlayCallbacks,
+  diagramAnchors?: Map<number, Point>
 ): void {
-  container.querySelectorAll('.pr-bubble, .pr-thread').forEach(el => el.remove());
+  container.querySelectorAll('.pr-bubble, .pr-bubble-cell, .pr-thread, .pr-table-thread-row').forEach(el => el.remove());
+  document.querySelectorAll('.pr-popover').forEach(el => el.remove());
   if (comments.length === 0) return;
   const threads = buildThreads(comments);
   for (const thread of threads) {
     const anchor = findAnchorElement(container, thread.line);
     if (!anchor) continue;
     const meta = threadMeta.find(m => m.rootCommentId === thread.rootId);
-    const bubble = createBubble(thread, meta, callbacks);
-    const floatTarget = anchor.tagName.toLowerCase() === 'li'
-      ? ((anchor.querySelector(':scope > p') as HTMLElement) ?? anchor)
-      : anchor;
-    floatTarget.prepend(bubble);
+    const isDiagram = anchor.classList.contains('mermaid');
+    const bubble = createBubble(thread, meta, callbacks, isDiagram);
+
+    if (isDiagram) {
+      const pos = diagramAnchors?.get(thread.rootId);
+      anchor.style.position = 'relative';
+      bubble.style.position = 'absolute';
+      if (pos) {
+        bubble.style.left = `${pos.x}px`;
+        bubble.style.top = `${pos.y}px`;
+      } else {
+        bubble.style.right = '8px';
+        bubble.style.top = '8px';
+      }
+      anchor.appendChild(bubble);
+      continue;
+    }
+
+    const tr = anchor.closest('tr') as HTMLElement | null;
+    if (tr) {
+      const cell = document.createElement('td');
+      cell.className = 'pr-bubble-cell';
+      tr.appendChild(cell);
+      cell.appendChild(bubble);
+    } else if (anchor.tagName.toLowerCase() === 'li') {
+      const floatTarget = (anchor.querySelector(':scope > p') as HTMLElement) ?? anchor;
+      floatTarget.prepend(bubble);
+    } else {
+      anchor.prepend(bubble);
+    }
   }
 }
 

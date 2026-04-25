@@ -12,4 +12,10 @@ package-lock.json
 CLAUDE.md
 .github/**
 images/*.svg
+images/screenshot-*.png
+images/demo.gif
 *.vsix
+test/**
+*.code-workspace
+.claude/**
+.superpowers/**

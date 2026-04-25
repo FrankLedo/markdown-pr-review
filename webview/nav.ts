@@ -5,7 +5,6 @@ export class NavStrip {
   private _currentIndex = 0;
   private _stripEl: HTMLElement | null = null;
   private _counterEl: HTMLElement | null = null;
-  private _countBadgeEl: HTMLElement | null = null;
 
   constructor(
     header: HTMLElement,
@@ -24,13 +23,11 @@ export class NavStrip {
       this._stripEl?.remove();
       this._stripEl = null;
       this._counterEl = null;
-      this._countBadgeEl = null;
       return;
     }
     if (!this._stripEl) {
       this._render();
     }
-    this._refreshBadge(totalComments);
     this._refreshCounter();
   }
 
@@ -50,19 +47,17 @@ export class NavStrip {
     this._refreshCounter();
   }
 
-  // Incremental update: refreshes count and counter WITHOUT resetting nav index (use for partial re-renders).
+  // Incremental update: refreshes counter WITHOUT resetting nav index (use for partial re-renders).
   refresh(totalComments: number): void {
     if (totalComments === 0) {
       this._stripEl?.remove();
       this._stripEl = null;
       this._counterEl = null;
-      this._countBadgeEl = null;
       return;
     }
     if (!this._stripEl) {
       this._render();
     }
-    this._refreshBadge(totalComments);
     this._refreshCounter();
   }
 
@@ -73,20 +68,16 @@ export class NavStrip {
     const left = document.createElement('span');
     left.className = 'pr-nav-left';
 
-    const countBadge = document.createElement('span');
-    countBadge.className = 'pr-nav-count';
-
     const expandAllBtn = document.createElement('button');
-    expandAllBtn.className = 'pr-nav-btn';
+    expandAllBtn.className = 'pr-nav-btn pr-nav-btn--action';
     expandAllBtn.textContent = 'Expand All';
     expandAllBtn.addEventListener('click', () => this._expandAll());
 
     const closeAllBtn = document.createElement('button');
-    closeAllBtn.className = 'pr-nav-btn';
+    closeAllBtn.className = 'pr-nav-btn pr-nav-btn--action';
     closeAllBtn.textContent = 'Close All';
     closeAllBtn.addEventListener('click', () => this._closeAll());
 
-    left.appendChild(countBadge);
     left.appendChild(expandAllBtn);
     left.appendChild(closeAllBtn);
 
@@ -96,7 +87,7 @@ export class NavStrip {
     const prevBtn = document.createElement('button');
     prevBtn.className = 'pr-nav-btn';
     prevBtn.textContent = '↑';
-    prevBtn.title = 'Previous comment ([)';
+    prevBtn.dataset.tooltip = 'Previous  [';
     prevBtn.addEventListener('click', () => this.prev());
 
     const counterEl = document.createElement('span');
@@ -105,7 +96,7 @@ export class NavStrip {
     const nextBtn = document.createElement('button');
     nextBtn.className = 'pr-nav-btn';
     nextBtn.textContent = '↓';
-    nextBtn.title = 'Next comment (])';
+    nextBtn.dataset.tooltip = 'Next  ]';
     nextBtn.addEventListener('click', () => this.next());
 
     right.appendChild(prevBtn);
@@ -118,12 +109,6 @@ export class NavStrip {
     this._header.prepend(strip);
     this._stripEl = strip;
     this._counterEl = counterEl;
-    this._countBadgeEl = countBadge;
-  }
-
-  private _refreshBadge(totalComments: number): void {
-    if (!this._countBadgeEl) return;
-    this._countBadgeEl.textContent = `● ${totalComments} comment${totalComments !== 1 ? 's' : ''}`;
   }
 
   private _refreshCounter(): void {

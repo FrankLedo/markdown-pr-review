@@ -12,6 +12,7 @@ export interface ThreadOptions {
   onUnresolve?: (nodeId: string) => void;
   onEdit?: (commentId: number, newBody: string) => void;
   onDelete?: (commentId: number) => void;
+  placement?: 'inline' | 'popover';
 }
 
 function closeDotMenus(container: HTMLElement): void {
@@ -170,22 +171,7 @@ export function insertAfterInTable(anchor: HTMLElement, content: HTMLElement): (
   return () => wrapRow.remove();
 }
 
-export function toggleThread(
-  bubble: HTMLElement,
-  comments: PRComment[],
-  threadId: number,
-  options?: ThreadOptions
-): void {
-  const existing = document.querySelector(`[data-thread-for="${threadId}"]`);
-  if (existing) {
-    const tableRow = existing.closest('.pr-table-thread-row');
-    (tableRow ?? existing).remove();
-    return;
-  }
-
-  const parent = bubble.closest('[data-line]') as HTMLElement | null;
-  if (!parent) return;
-
+function buildPanel(comments: PRComment[], threadId: number, options?: ThreadOptions): HTMLElement {
   const panel = document.createElement('div');
   panel.className = 'pr-thread';
   panel.dataset.threadFor = String(threadId);
@@ -229,11 +215,7 @@ export function toggleThread(
     item.appendChild(header);
     item.appendChild(body);
 
-    // ⋯ menu — own comments only
-    if (
-      options?.currentUserLogin &&
-      comment.user.login === options.currentUserLogin
-    ) {
+    if (options?.currentUserLogin && comment.user.login === options.currentUserLogin) {
       addDotMenu(item, comment, body, options);
     }
 
@@ -282,6 +264,86 @@ export function toggleThread(
   }
 
   panel.appendChild(footer);
+  return panel;
+}
+
+function showAsPopover(bubble: HTMLElement, panel: HTMLElement): void {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'pr-popover';
+
+  const arrow = document.createElement('div');
+  wrapper.appendChild(arrow);
+  wrapper.appendChild(panel);
+  document.body.appendChild(wrapper);
+
+  // Position after appending so getBoundingClientRect is accurate
+  const bubbleRect = bubble.getBoundingClientRect();
+  const wRect = wrapper.getBoundingClientRect();
+  const GAP = 8;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+
+  let left = bubbleRect.right + GAP;
+  let arrowClass = 'pr-popover-arrow pr-popover-arrow--left';
+
+  if (left + wRect.width > vw - GAP) {
+    left = bubbleRect.left - wRect.width - GAP;
+    arrowClass = 'pr-popover-arrow pr-popover-arrow--right';
+  }
+
+  // Clamp left to prevent off-screen when flipping to left
+  left = Math.max(GAP, left);
+
+  const top = Math.max(GAP, Math.min(
+    bubbleRect.top + bubbleRect.height / 2 - wRect.height / 2,
+    vh - wRect.height - GAP
+  ));
+
+  wrapper.style.cssText = `position:fixed;z-index:9999;left:${left}px;top:${top}px;`;
+  arrow.className = arrowClass;
+
+  // Clamp arrow top to stay within bounds
+  const arrowTop = Math.max(0, Math.min(
+    bubbleRect.top + bubbleRect.height / 2 - top - 5,
+    wRect.height - 10
+  ));
+  arrow.style.cssText = `top:${arrowTop}px;`;
+
+  const dismiss = (e: MouseEvent): void => {
+    // Check if wrapper is still connected to DOM; if not, cleanup listener
+    if (!wrapper.isConnected) {
+      document.removeEventListener('click', dismiss);
+      return;
+    }
+    if (!wrapper.contains(e.target as Node) && e.target !== bubble) {
+      wrapper.remove();
+      document.removeEventListener('click', dismiss);
+    }
+  };
+  setTimeout(() => document.addEventListener('click', dismiss), 0);
+}
+
+export function toggleThread(
+  bubble: HTMLElement,
+  comments: PRComment[],
+  threadId: number,
+  options?: ThreadOptions
+): void {
+  const existing = document.querySelector(`[data-thread-for="${threadId}"]`);
+  if (existing) {
+    (existing.closest('.pr-popover') ?? existing.closest('.pr-table-thread-row') ?? existing).remove();
+    return;
+  }
+
+  const panel = buildPanel(comments, threadId, options);
+
+  if (options?.placement === 'popover') {
+    showAsPopover(bubble, panel);
+    return;
+  }
+
+  const parent = bubble.closest('[data-line]') as HTMLElement | null;
+  if (!parent) return;
   if (!insertAfterInTable(parent, panel)) {
     parent.insertAdjacentElement('afterend', panel);
   }

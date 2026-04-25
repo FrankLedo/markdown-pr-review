@@ -1,5 +1,6 @@
 import { renderMarkdown } from './renderer';
 import { placeOverlays, initSelectionHandlers, type OverlayCallbacks } from './overlay';
+import { resolveDiagramAnchors, type Point } from './diagram-anchors';
 import { createComposeBox } from './compose';
 import { DraftManager } from './draft';
 import { NavStrip } from './nav';
@@ -23,6 +24,7 @@ let contentEl: HTMLElement | null = null;
 let selectionHandlersReady = false;
 let openThreadIds: Set<number> = new Set();
 let navStrip: NavStrip | undefined;
+let diagramAnchors: Map<number, Point> = new Map();
 
 function countThreads(): number {
   return document.querySelectorAll<HTMLElement>('[data-thread-id]').length;
@@ -36,11 +38,41 @@ function processComment(c: PRComment): PRComment {
   return { ...c, body: c.body.slice(0, m.index as number), line: parseInt(m[1], 10) };
 }
 
-function fileOptionLabel(filePath: string, allPaths: string[]): string {
+function fileShortName(filePath: string, allPaths: string[]): string {
   const base = filePath.split('/').pop()!;
   const hasDupe = allPaths.filter(p => p.split('/').pop() === base).length > 1;
-  if (!hasDupe) return base;
-  return filePath.split('/').slice(-2).join('/');
+  return hasDupe ? filePath.split('/').slice(-2).join('/') : base;
+}
+
+function countSuffix(openCount: number, resolvedCount: number): string {
+  const total = openCount + resolvedCount;
+  if (total === 0) return '';
+  if (openCount > 0 && resolvedCount > 0) return ` (${openCount} open, ${resolvedCount} resolved)`;
+  if (openCount > 0) return ` (${openCount} open)`;
+  return ` (${resolvedCount} resolved)`;
+}
+
+function fileOptionLabel(filePath: string, openCount: number, resolvedCount: number, allPaths: string[]): string {
+  return fileShortName(filePath, allPaths) + countSuffix(openCount, resolvedCount);
+}
+
+function fileFullLabel(filePath: string, openCount: number, resolvedCount: number): string {
+  return filePath + countSuffix(openCount, resolvedCount);
+}
+
+function updateCurrentFileOption(): void {
+  const selectEl = document.querySelector<HTMLSelectElement>('.pr-file-select');
+  if (!selectEl) return;
+  const opt = selectEl.options[selectEl.selectedIndex];
+  if (!opt) return;
+  const allPaths = Array.from(selectEl.options).map(o => o.value);
+  const currentPath = opt.value;
+  const openCount = allThreadMeta.filter(t => t.path === currentPath && !t.isResolved).length;
+  const resolvedCount = allThreadMeta.filter(t => t.path === currentPath && t.isResolved).length;
+  const label = fileOptionLabel(opt.value, openCount, resolvedCount, allPaths);
+  opt.textContent = label;
+  opt.dataset.shortLabel = label;
+  opt.dataset.fullLabel = fileFullLabel(opt.value, openCount, resolvedCount);
 }
 
 function showToast(message: string): void {
@@ -52,7 +84,7 @@ function showToast(message: string): void {
 }
 
 function placeOverlaysKeepOpen(): void {
-  placeOverlays(contentEl!, allComments, allThreadMeta, buildCallbacks());
+  placeOverlays(contentEl!, allComments, allThreadMeta, buildCallbacks(), diagramAnchors);
   navStrip?.refresh(countThreads());
   document.querySelectorAll<HTMLElement>('[data-thread-id]').forEach(bubble => {
     if (openThreadIds.has(Number(bubble.dataset.threadId))) bubble.click();
@@ -212,6 +244,7 @@ window.addEventListener('message', (event: MessageEvent<ExtensionMessage>) => {
       m.nodeId === msg.threadNodeId ? { ...m, isResolved: true } : m
     );
     placeOverlaysKeepOpen();
+    updateCurrentFileOption();
     return;
   }
 
@@ -220,6 +253,7 @@ window.addEventListener('message', (event: MessageEvent<ExtensionMessage>) => {
       m.nodeId === msg.threadNodeId ? { ...m, isResolved: false } : m
     );
     placeOverlaysKeepOpen();
+    updateCurrentFileOption();
     return;
   }
 
@@ -255,15 +289,22 @@ async function handleRender(msg: RenderMessage): Promise<void> {
     selectEl.addEventListener('change', () => {
       vscode.postMessage({ type: 'switchFile', path: selectEl!.value });
     });
+    selectEl.addEventListener('mousedown', () => {
+      Array.from(selectEl!.options).forEach(o => { o.textContent = o.dataset.fullLabel ?? o.value; });
+    });
+    selectEl.addEventListener('blur', () => {
+      Array.from(selectEl!.options).forEach(o => { o.textContent = o.dataset.shortLabel ?? o.value; });
+    });
     headerEl.appendChild(selectEl);
   }
   selectEl.innerHTML = '';
+  const allPaths = msg.prFiles.map(x => x.path);
   for (const f of msg.prFiles) {
     const opt = document.createElement('option');
     opt.value = f.path;
-    opt.textContent = f.commentCount > 0
-      ? `● ${fileOptionLabel(f.path, msg.prFiles.map(x => x.path))}`
-      : fileOptionLabel(f.path, msg.prFiles.map(x => x.path));
+    opt.dataset.shortLabel = fileOptionLabel(f.path, f.openCount, f.resolvedCount, allPaths);
+    opt.dataset.fullLabel = fileFullLabel(f.path, f.openCount, f.resolvedCount);
+    opt.textContent = opt.dataset.shortLabel;
     opt.selected = f.path === msg.filePath;
     selectEl.appendChild(opt);
   }
@@ -277,11 +318,15 @@ async function handleRender(msg: RenderMessage): Promise<void> {
   mermaid.initialize({ startOnLoad: false, theme: isDark ? 'dark' : 'default' });
 
   const mermaidNodes = contentEl.querySelectorAll<HTMLElement>('.mermaid');
+  const mermaidSources = new Map<HTMLElement, string>();
+  mermaidNodes.forEach(el => mermaidSources.set(el, el.textContent?.trim() ?? ''));
+
   if (mermaidNodes.length > 0) {
     await mermaid.run({ nodes: mermaidNodes });
   }
 
-  placeOverlays(contentEl, allComments, allThreadMeta, buildCallbacks());
+  diagramAnchors = resolveDiagramAnchors(contentEl, allComments, mermaidSources);
+  placeOverlays(contentEl, allComments, allThreadMeta, buildCallbacks(), diagramAnchors);
 
   const header = document.getElementById('review-header')!;
   if (!navStrip) {

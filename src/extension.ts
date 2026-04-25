@@ -9,17 +9,77 @@ import {
   findPrNumber,
   fetchPrFiles,
   fetchPrComments,
-  fetchPrCommentCounts,
   fetchThreadMeta,
   type PrFilesResult,
 } from './GitHubClient';
 
-function pickInitialFile(mdFiles: string[], activeRelPath: string | null): string {
+function pickInitialFile(mdFiles: string[], activeRelPath: string | null, openByFile: Record<string, number>): string {
   if (activeRelPath && mdFiles.includes(activeRelPath)) return activeRelPath;
-  return mdFiles[0];
+  return mdFiles.find(p => (openByFile[p] ?? 0) > 0) ?? mdFiles[0];
+}
+
+// null = confirmed no open PR on this branch
+let prStatusCache: { branch: string; prNumber: number | null } | undefined;
+let statusBarDebounce: ReturnType<typeof setTimeout> | undefined;
+
+async function refreshPrStatusBar(item: vscode.StatusBarItem): Promise<void> {
+  const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+  if (!workspaceRoot) { item.hide(); return; }
+  try {
+    const { owner, repo, branch } = getGitContext(workspaceRoot);
+    if (prStatusCache?.branch === branch) {
+      if (prStatusCache.prNumber == null) { item.hide(); return; }
+      item.text = `$(comment-discussion) PR #${prStatusCache.prNumber}`;
+      item.show();
+      return;
+    }
+    const session = await vscode.authentication.getSession('github', ['repo'], { createIfNone: false });
+    if (!session) {
+      // No auth yet — show generic so user can click to authenticate
+      item.text = `$(comment-discussion) Markdown PR Review`;
+      item.show();
+      return;
+    }
+    try {
+      const { prNumber } = await findPrNumber(owner, repo, branch, session.accessToken);
+      prStatusCache = { branch, prNumber };
+      item.text = `$(comment-discussion) PR #${prNumber}`;
+      item.show();
+    } catch {
+      // Confirmed no open PR for this branch
+      prStatusCache = { branch, prNumber: null };
+      item.hide();
+    }
+  } catch {
+    item.hide();
+  }
 }
 
 export function activate(context: vscode.ExtensionContext): void {
+  const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+  statusBarItem.command = 'markdown-pr-review.openReview';
+  statusBarItem.tooltip = 'Markdown PR Review';
+  context.subscriptions.push(statusBarItem);
+
+  const scheduleRefresh = () => {
+    if (statusBarDebounce) clearTimeout(statusBarDebounce);
+    statusBarDebounce = setTimeout(() => refreshPrStatusBar(statusBarItem), 2000);
+  };
+
+  context.subscriptions.push(
+    vscode.window.onDidChangeActiveTextEditor(scheduleRefresh)
+  );
+
+  // Also react to git branch changes so the bar updates without a file switch.
+  const gitExt = vscode.extensions.getExtension<{ getAPI(v: 1): { repositories: Array<{ state: { onDidChange: vscode.Event<void> } }> } }>('vscode.git');
+  if (gitExt?.isActive) {
+    for (const repo of gitExt.exports.getAPI(1).repositories) {
+      context.subscriptions.push(repo.state.onDidChange(scheduleRefresh));
+    }
+  }
+
+  refreshPrStatusBar(statusBarItem);
+
   const command = vscode.commands.registerCommand(
     'markdown-pr-review.openReview',
     async () => {
@@ -53,25 +113,29 @@ export function activate(context: vscode.ExtensionContext): void {
               throw new Error('This PR has no markdown files.');
             }
 
-            // Prefer the active editor's file if it's in the PR diff
+            // Resolve active editor path before fetching so we can pick the right initial file
             let activeRelPath: string | null = null;
             if (editor) {
-              // Resolve symlinks so both paths share the same real prefix
               const realActive = fs.realpathSync(editor.document.uri.fsPath);
               activeRelPath = path.relative(repoRoot, realActive).replace(/\\/g, '/');
             }
-            const selectedFile = pickInitialFile(mdFiles, activeRelPath);
 
-            const [comments, counts, threadMetaResult] = await Promise.allSettled([
-              fetchPrComments(owner, repo, prNumber, selectedFile, token),
-              fetchPrCommentCounts(owner, repo, prNumber, token),
-              fetchThreadMeta(owner, repo, prNumber, token),
-            ]);
+            const threadMetaResult = await fetchThreadMeta(owner, repo, prNumber, token).catch(() => []);
+            const openByFile: Record<string, number> = {};
+            const resolvedByFile: Record<string, number> = {};
+            for (const t of threadMetaResult) {
+              if (!t.path) continue;
+              if (t.isResolved) resolvedByFile[t.path] = (resolvedByFile[t.path] ?? 0) + 1;
+              else openByFile[t.path] = (openByFile[t.path] ?? 0) + 1;
+            }
 
-            const commentCounts = counts.status === 'fulfilled' ? counts.value : {};
+            const selectedFile = pickInitialFile(mdFiles, activeRelPath, openByFile);
+            const comments = await fetchPrComments(owner, repo, prNumber, selectedFile, token).catch(() => []);
+
             const prFiles: PrFile[] = mdFiles.map(p => ({
               path: p,
-              commentCount: commentCounts[p] ?? 0,
+              openCount: openByFile[p] ?? 0,
+              resolvedCount: resolvedByFile[p] ?? 0,
             }));
 
             const markdown = fs.readFileSync(path.join(repoRoot, selectedFile), 'utf8');
@@ -79,8 +143,8 @@ export function activate(context: vscode.ExtensionContext): void {
             const panel = ReviewPanel.createOrShow(context.extensionUri);
             panel.render(
               markdown,
-              comments.status === 'fulfilled' ? comments.value : [],
-              threadMetaResult.status === 'fulfilled' ? threadMetaResult.value : [],
+              comments,
+              threadMetaResult,
               {
                 owner,
                 repo,

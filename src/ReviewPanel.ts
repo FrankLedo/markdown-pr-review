@@ -95,8 +95,7 @@ export class ReviewPanel {
     this._currentUserLogin = ctx.currentUserLogin;
     this._draftComments = [];
 
-    const fileName = ctx.filePath.split('/').pop() ?? ctx.filePath;
-    this._panel.title = `PR Review: ${fileName}`;
+    this._panel.title = 'Markdown PR Review';
 
     this._lastRenderMsg = {
       type: 'render',
@@ -139,14 +138,15 @@ export class ReviewPanel {
       console.warn('fetchThreadMeta failed on switch:', err);
     }
 
-    this._prFiles = this._prFiles.map(f =>
-      f.path === relPath ? { ...f, commentCount: comments.length } : f
-    );
+    this._prFiles = this._prFiles.map(f => ({
+      ...f,
+      openCount: threadMeta.filter(t => t.path === f.path && !t.isResolved).length,
+      resolvedCount: threadMeta.filter(t => t.path === f.path && t.isResolved).length,
+    }));
     this._filePath = relPath;
     this._draftComments = [];
 
-    const fileName = relPath.split('/').pop() ?? relPath;
-    this._panel.title = `PR Review: ${fileName}`;
+    this._panel.title = 'Markdown PR Review';
 
     this._lastRenderMsg = {
       type: 'render',
@@ -338,6 +338,7 @@ export class ReviewPanel {
       display: flex;
       align-items: center;
       justify-content: flex-end;
+      gap: 8px;
     }
     #review-header:empty { display: none; }
     #content { max-width: 800px; margin: 0 auto; padding: 20px; }
@@ -553,24 +554,44 @@ export class ReviewPanel {
       align-items: center;
       gap: 5px;
     }
-    .pr-nav-count {
-      background: var(--vscode-badge-background, #4d4d4d);
-      color: var(--vscode-badge-foreground, #fff);
-      border-radius: 10px;
-      padding: 2px 8px;
-      font-size: 11px;
-    }
     .pr-nav-btn {
       background: rgba(255,255,255,0.08);
       border: none;
       color: var(--vscode-editor-foreground);
       border-radius: 3px;
-      padding: 2px 8px;
-      font-size: 12px;
+      padding: 1px 6px;
+      font-size: 11px;
       cursor: pointer;
       line-height: 1.4;
     }
     .pr-nav-btn:hover { background: rgba(255,255,255,0.15); }
+    [data-tooltip] { position: relative; }
+    [data-tooltip]::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      top: calc(100% + 5px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--vscode-editorHoverWidget-background, #252526);
+      color: var(--vscode-editorHoverWidget-foreground, #cccccc);
+      border: 1px solid var(--vscode-editorHoverWidget-border, rgba(255,255,255,0.15));
+      border-radius: 3px;
+      padding: 3px 8px;
+      font-size: 11px;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s;
+      z-index: 1000;
+    }
+    [data-tooltip]:hover::after { opacity: 1; }
+    .pr-nav-btn--action {
+      background: var(--vscode-badge-background, #4d4d4d);
+      color: var(--vscode-badge-foreground, #fff);
+      border-radius: 10px;
+      padding: 2px 8px;
+    }
+    .pr-nav-btn--action:hover { opacity: 0.85; background: var(--vscode-badge-background, #4d4d4d); }
     .pr-nav-counter {
       opacity: 0.6;
       font-size: 11px;
@@ -585,6 +606,14 @@ export class ReviewPanel {
       animation: pr-nav-highlight 600ms ease-out forwards;
     }
     .pr-table-thread-row td { border: none !important; padding: 0 !important; }
+    .pr-bubble-cell {
+      width: 1px;
+      white-space: nowrap;
+      padding: 2px 6px !important;
+      vertical-align: middle;
+      border: none !important;
+    }
+    .pr-bubble-cell .pr-bubble { float: none; margin-left: 0; }
     .pr-file-select {
       font-size: 12px;
       background: var(--vscode-dropdown-background, #3c3c3c);
@@ -597,6 +626,35 @@ export class ReviewPanel {
       cursor: pointer;
     }
     .pr-file-select:focus { outline: 1px solid var(--vscode-focusBorder, #007acc); }
+    .pr-popover {
+      background: var(--vscode-editorWidget-background, #252526);
+      border: 1px solid var(--vscode-editorWidget-border, rgba(255,255,255,0.18));
+      border-radius: 6px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+      max-width: 360px;
+      min-width: 240px;
+      max-height: 60vh;
+      overflow-y: auto;
+      padding: 10px 12px;
+    }
+    .pr-popover-arrow--left,
+    .pr-popover-arrow--right {
+      position: absolute;
+      width: 0;
+      height: 0;
+    }
+    .pr-popover-arrow--left {
+      left: -6px;
+      border-top: 5px solid transparent;
+      border-bottom: 5px solid transparent;
+      border-right: 6px solid var(--vscode-editorWidget-border, rgba(255,255,255,0.18));
+    }
+    .pr-popover-arrow--right {
+      right: -6px;
+      border-top: 5px solid transparent;
+      border-bottom: 5px solid transparent;
+      border-left: 6px solid var(--vscode-editorWidget-border, rgba(255,255,255,0.18));
+    }
   </style>
 </head>
 <body>
