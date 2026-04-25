@@ -22,8 +22,8 @@ export function extractSequenceActor(sourceLine: string): string | null {
   );
   if (declMatch) {
     if (declMatch[1]) return declMatch[1]; // has alias: return it
-    // plain unquoted name: extract it
-    const plain = sourceLine.trim().match(/^(?:participant|actor)\s+([A-Za-z0-9_]+)/i);
+    // plain unquoted name: extract it (but not quoted names without alias)
+    const plain = sourceLine.trim().match(/^(?:participant|actor)\s+([^"\s]\S*)/i);
     return plain ? plain[1] : null;
   }
   // message line: extract sender actor (includes -x arrow for cross)

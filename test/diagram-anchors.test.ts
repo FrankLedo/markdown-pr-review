@@ -36,5 +36,7 @@ assert.equal(extractSequenceActor('    Alice-xBob: message'), 'Alice');
 assert.equal(extractSequenceActor('    participant "Web Browser" as wb'), 'wb');
 // quoted name without alias → null (text search will handle)
 assert.equal(extractSequenceActor('    participant "Web Browser"'), null);
+// hyphenated unquoted name → full name
+assert.equal(extractSequenceActor('    participant Web-App'), 'Web-App');
 
 console.log('All diagram-anchors tests passed ✓');
