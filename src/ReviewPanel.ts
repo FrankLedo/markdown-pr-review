@@ -626,6 +626,35 @@ export class ReviewPanel {
       cursor: pointer;
     }
     .pr-file-select:focus { outline: 1px solid var(--vscode-focusBorder, #007acc); }
+    .pr-popover {
+      background: var(--vscode-editorWidget-background, #252526);
+      border: 1px solid var(--vscode-editorWidget-border, rgba(255,255,255,0.18));
+      border-radius: 6px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+      max-width: 360px;
+      min-width: 240px;
+      max-height: 60vh;
+      overflow-y: auto;
+      padding: 10px 12px;
+    }
+    .pr-popover-arrow--left,
+    .pr-popover-arrow--right {
+      position: absolute;
+      width: 0;
+      height: 0;
+    }
+    .pr-popover-arrow--left {
+      left: -6px;
+      border-top: 5px solid transparent;
+      border-bottom: 5px solid transparent;
+      border-right: 6px solid var(--vscode-editorWidget-border, rgba(255,255,255,0.18));
+    }
+    .pr-popover-arrow--right {
+      right: -6px;
+      border-top: 5px solid transparent;
+      border-bottom: 5px solid transparent;
+      border-left: 6px solid var(--vscode-editorWidget-border, rgba(255,255,255,0.18));
+    }
   </style>
 </head>
 <body>
