@@ -268,6 +268,9 @@ function buildPanel(comments: PRComment[], threadId: number, options?: ThreadOpt
 }
 
 function showAsPopover(bubble: HTMLElement, panel: HTMLElement): void {
+  // Only one popover at a time — close any existing one before opening a new one.
+  document.querySelectorAll('.pr-popover').forEach(el => el.remove());
+
   const wrapper = document.createElement('div');
   wrapper.className = 'pr-popover';
 
