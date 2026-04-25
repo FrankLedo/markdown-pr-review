@@ -55,20 +55,24 @@ function findSequenceElement(
   source: string,
   relLine: number
 ): Element | null {
-  // Try to match actor by visible text label
-  for (const textEl of Array.from(diagramEl.querySelectorAll('text'))) {
-    if (textEl.textContent?.trim() === actorName) return textEl;
-  }
-  // Count message index up to relLine, then pick the Nth messageText element
   const MSG_RE = /^\s*\S+[-~]+[>)x]+/;
   const lines = source.split('\n');
-  let msgIdx = 0;
-  for (let i = 0; i < relLine; i++) {
-    if (MSG_RE.test(lines[i] ?? '')) msgIdx++;
-  }
+
+  // For message lines: anchor to the specific message label (at the right height),
+  // not the actor box (which is always at the top of the diagram).
   if (MSG_RE.test(lines[relLine] ?? '')) {
+    let msgIdx = 0;
+    for (let i = 0; i < relLine; i++) {
+      if (MSG_RE.test(lines[i] ?? '')) msgIdx++;
+    }
     const msgs = Array.from(diagramEl.querySelectorAll('text.messageText, .messageText'));
-    return msgs[msgIdx] ?? null;
+    const el = msgs[msgIdx];
+    if (el) return el;
+  }
+
+  // For participant/actor declarations (or message fallback): find actor text node.
+  for (const textEl of Array.from(diagramEl.querySelectorAll('text'))) {
+    if (textEl.textContent?.trim() === actorName) return textEl;
   }
   return null;
 }
