@@ -68,13 +68,13 @@ const result = greet('world');
 console.log(result);
 ```
 
-Comment anchored to a fenced code block should land on the block itself,
-not the surrounding text.
+Comment anchored to a fenced code block lands on the whole block — not
+the specific line within it.
 
 ## Mermaid Flowchart
 
 Comment on individual nodes and edges below to test semantic bubble placement.
-The bubble should land on the specific node or edge, falling back to the diagram corner.
+The bubble should land on the specific node or edge, falling back to proportional Y then corner.
 
 ```mermaid
 flowchart TD
@@ -117,7 +117,7 @@ Text after the blockquote, to confirm the blockquote and this paragraph get sepa
 | Inline threads | ✅ Done | Anchored via source maps |
 | Draft batching | ✅ Done | Submit as one review |
 | File switcher | ✅ Done | Dropdown in header |
-| Mermaid support | ✅ Done | Anchors to fence block |
+| Mermaid support | ✅ Done | Anchors to specific node, edge, or message |
 | Scroll sync | 🚧 Planned | Phase 4 |
 
 ## Edge Cases
