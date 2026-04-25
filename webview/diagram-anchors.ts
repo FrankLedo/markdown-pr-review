@@ -144,9 +144,9 @@ export function resolveDiagramAnchors(
     // (blockStartLine + 1) + 1 = blockStartLine + 2.
     // relLine = comment.line - blockStartLine - 2  (0-indexed into source body lines)
     const blockStartLine = parseInt(anchor.dataset['line'] ?? '0', 10);
-    const relLine = comment.line - blockStartLine - 2;
+    const relLine = Math.max(0, comment.line - blockStartLine - 2);
     const sourceLines = source.split('\n');
-    const sourceLine = sourceLines[Math.max(0, relLine)] ?? '';
+    const sourceLine = sourceLines[relLine] ?? '';
     const totalLines = sourceLines.length;
 
     const type = detectDiagramType(source);
