@@ -57,18 +57,37 @@ console.log(result);
 Comment anchored to a fenced code block should land on the block itself,
 not the surrounding text.
 
-## Mermaid Diagram
+## Mermaid Flowchart
+
+Comment on individual nodes and edges below to test semantic bubble placement.
+The bubble should land on the specific node or edge, falling back to the diagram corner.
 
 ```mermaid
-graph TD
+flowchart TD
     A[Open markdown file] --> B[Run Open Review Panel]
-    B --> C[Panel renders with comment bubbles]
-    C --> D[Click bubble to expand thread]
-    D --> E[Reply, edit, or resolve]
+    B --> C{File has PR comments?}
+    C -->|yes| D[Render webview with bubbles]
+    C -->|no| E[Show empty state]
+    D --> F[Click bubble to expand thread]
+    F --> G[Reply, edit, or resolve]
 ```
 
-Comments on a Mermaid diagram anchor to the fence block (the whole diagram),
-not to an individual node — matching GitHub's own behaviour.
+## Mermaid Sequence Diagram
+
+Comment on individual messages or actors below to test semantic placement in a sequence diagram.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Extension
+    participant GitHub
+    User->>Extension: Open Review Panel
+    Extension->>GitHub: Fetch PR comments
+    GitHub-->>Extension: Return comment list
+    Extension->>User: Render webview with overlays
+    User->>Extension: Click bubble
+    Extension->>User: Expand thread panel
+```
 
 ## Blockquote
 
