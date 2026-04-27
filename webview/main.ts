@@ -25,6 +25,7 @@ let selectionHandlersReady = false;
 let openThreadIds: Set<number> = new Set();
 let navStrip: NavStrip | undefined;
 let diagramAnchors: Map<number, Point> = new Map();
+let currentMarkdown = '';
 
 function countThreads(): number {
   return document.querySelectorAll<HTMLElement>('[data-thread-id]').length;
@@ -165,7 +166,22 @@ function insertComposeAfter(anchor: HTMLElement, box: HTMLElement): void {
   anchor.insertAdjacentElement('afterend', box);
 }
 
+// Returns the 0-indexed line number if the selected text matches exactly one
+// line in the markdown source. Falls back to the data-line block anchor otherwise.
+function findExactLine(selected: string, fallback: number): number {
+  const needle = selected.split('\n').map(l => l.trim()).find(l => l.length >= 3);
+  if (!needle) return fallback;
+  const lines = currentMarkdown.split('\n');
+  const matches = lines.reduce<number[]>((acc, l, i) => {
+    if (l.includes(needle)) acc.push(i);
+    return acc;
+  }, []);
+  return matches.length === 1 ? matches[0] : fallback;
+}
+
 function onAddComment(anchor: HTMLElement, line: number): void {
+  const selected = window.getSelection()?.toString() ?? '';
+  const exactLine = findExactLine(selected, line);
   const box = createComposeBox({
     hasDraft: () => draft.count > 0,
     onPostImmediately: (body) => {
@@ -173,7 +189,7 @@ function onAddComment(anchor: HTMLElement, line: number): void {
       allComments.push({
         id: tempId,
         node_id: '',
-        line: line + 1,
+        line: exactLine + 1,
         body,
         user: { login: currentUserLogin, avatar_url: '' },
         created_at: new Date().toISOString(),
@@ -181,9 +197,9 @@ function onAddComment(anchor: HTMLElement, line: number): void {
       box.remove();
       placeOverlays(contentEl!, allComments, allThreadMeta, buildCallbacks());
       navStrip?.refresh(countThreads());
-      vscode.postMessage({ type: 'postComment', line, body, tempId });
+      vscode.postMessage({ type: 'postComment', line: exactLine, body, tempId });
     },
-    onAddToDraft: (body) => { draft.add(line, body); },
+    onAddToDraft: (body) => { draft.add(exactLine, body); },
     onCancel: () => {},
   });
   insertComposeAfter(anchor, box);
@@ -309,6 +325,7 @@ async function handleRender(msg: RenderMessage): Promise<void> {
     selectEl.appendChild(opt);
   }
 
+  currentMarkdown = msg.markdown;
   contentEl.innerHTML = renderMarkdown(msg.markdown);
 
   const isDark =
