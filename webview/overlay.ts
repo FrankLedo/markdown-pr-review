@@ -137,6 +137,23 @@ export function placeOverlays(
       continue;
     }
 
+    const pre = anchor.querySelector('pre');
+    if (pre !== null) {
+      const codeEl = pre.querySelector('code') ?? pre;
+      const blockStartLine = parseInt(anchor.dataset['line'] ?? '0', 10);
+      const relLine = Math.max(0, thread.line - blockStartLine - 2);
+      const rawLineHeight = parseFloat(getComputedStyle(codeEl).lineHeight);
+      const lineHeight = isNaN(rawLineHeight) ? 18 : rawLineHeight;
+      const rawPaddingTop = parseFloat(getComputedStyle(pre).paddingTop);
+      const paddingTop = isNaN(rawPaddingTop) ? 0 : rawPaddingTop;
+      anchor.style.position = 'relative';
+      bubble.style.position = 'absolute';
+      bubble.style.right = '8px';
+      bubble.style.top = `${paddingTop + relLine * lineHeight}px`;
+      anchor.appendChild(bubble);
+      continue;
+    }
+
     const tr = anchor.closest('tr') as HTMLElement | null;
     if (tr) {
       const cell = document.createElement('td');
