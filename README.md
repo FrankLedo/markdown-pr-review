@@ -4,9 +4,13 @@ Read and review GitHub Pull Request comments on rendered markdown — right insi
 
 ## The problem
 
-Reviewing long-form markdown (design docs, RFCs, runbooks, architecture notes) through a GitHub PR is painful. The diff view shows raw syntax. The rendered preview and the review comments live in separate places. You end up bouncing between tabs, losing context with every switch.
+In AI-first development, more decisions live in Markdown — design docs, RFCs, architecture decision records. We generate them faster than ever. Then we review them as GitHub PRs and stare at raw syntax.
 
-## What this does
+Reviewing long-form markdown through a GitHub PR is painful. The diff view shows raw syntax. The rendered preview and the review comments live in separate places. You end up bouncing between tabs, losing context with every switch.
+
+## How it works
+
+The interesting engineering problem: GitHub comments carry a source line number, but rendered HTML has no concept of source lines. The fix is source maps — markdown-it has a mode that emits `data-line` attributes on every rendered element. Match the comment's line number to the nearest `data-line` node in the DOM, and you have a precise anchor.
 
 Opens a rendered preview of your markdown file with GitHub PR comment threads overlaid inline — anchored to the exact rendered element they were left on. No raw syntax. No tab switching.
 
@@ -40,7 +44,7 @@ VS Code 1.85 or later.
 
 ## Install
 
-Search **Markdown PR Review** in the Extensions view, or install from the command line:
+Install from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=frankledo.markdown-pr-review), search **Markdown PR Review** in the Extensions view, or install from the command line:
 
 ```bash
 code --install-extension frankledo.markdown-pr-review
