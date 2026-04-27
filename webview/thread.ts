@@ -13,6 +13,7 @@ export interface ThreadOptions {
   onEdit?: (commentId: number, newBody: string) => void;
   onDelete?: (commentId: number) => void;
   placement?: 'inline' | 'popover';
+  showCloseButton?: boolean;
 }
 
 function closeDotMenus(container: HTMLElement): void {
@@ -264,6 +265,18 @@ function buildPanel(comments: PRComment[], threadId: number, options?: ThreadOpt
   }
 
   panel.appendChild(footer);
+
+  if (options?.showCloseButton) {
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'pr-thread-close-btn';
+    closeBtn.textContent = '×';
+    closeBtn.title = 'Close';
+    closeBtn.addEventListener('click', () => {
+      document.querySelector<HTMLElement>(`[data-thread-id="${threadId}"]`)?.click();
+    });
+    panel.appendChild(closeBtn);
+  }
+
   return panel;
 }
 

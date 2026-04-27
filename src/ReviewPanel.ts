@@ -365,6 +365,7 @@ export class ReviewPanel {
       border-radius: 50%; object-fit: cover; display: block;
     }
     .pr-thread {
+      position: relative;
       background: var(--vscode-editor-inactiveSelectionBackground, rgba(255,255,255,0.05));
       border-left: 3px solid var(--vscode-focusBorder, #007acc);
       padding: 8px 12px;
@@ -372,6 +373,20 @@ export class ReviewPanel {
       border-radius: 0 4px 4px 0;
       clear: both;
     }
+    .pr-thread-close-btn {
+      position: absolute;
+      top: 4px;
+      right: 6px;
+      background: none;
+      border: none;
+      color: var(--vscode-foreground, inherit);
+      opacity: 0.5;
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 1;
+      padding: 0 2px;
+    }
+    .pr-thread-close-btn:hover { opacity: 1; }
     .pr-thread-item + .pr-thread-item {
       border-top: 1px solid var(--vscode-widget-border, rgba(255,255,255,0.1));
       margin-top: 8px;

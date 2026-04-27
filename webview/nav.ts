@@ -133,6 +133,7 @@ export class NavStrip {
 
   private _expandAll(): void {
     this._bubbleProvider().forEach(bubble => {
+      if (bubble.classList.contains('pr-bubble--floating')) return;
       const threadId = bubble.dataset.threadId;
       if (threadId && !document.querySelector(`[data-thread-for="${threadId}"]`)) {
         bubble.click();

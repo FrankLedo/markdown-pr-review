@@ -52,7 +52,8 @@ function createBubble(
   thread: Thread,
   meta: ThreadMeta | undefined,
   callbacks?: OverlayCallbacks,
-  isDiagram = false
+  isDiagram = false,
+  isFloating = false
 ): HTMLElement {
   const isResolved = meta?.isResolved ?? false;
 
@@ -92,7 +93,9 @@ function createBubble(
     onEdit: callbacks?.onEdit,
     onDelete: callbacks?.onDelete,
     placement: isDiagram ? 'popover' : 'inline',
+    showCloseButton: isFloating,
   };
+  if (isFloating) bubble.classList.add('pr-bubble--floating');
 
   bubble.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -120,7 +123,8 @@ export function placeOverlays(
     if (!anchor) continue;
     const meta = threadMeta.find(m => m.rootCommentId === thread.rootId);
     const isDiagram = anchor.classList.contains('mermaid');
-    const bubble = createBubble(thread, meta, callbacks, isDiagram);
+    const pre = anchor.querySelector('pre');
+    const bubble = createBubble(thread, meta, callbacks, isDiagram, isDiagram || pre !== null);
 
     if (isDiagram) {
       const pos = diagramAnchors?.get(thread.rootId);
@@ -137,7 +141,6 @@ export function placeOverlays(
       continue;
     }
 
-    const pre = anchor.querySelector('pre');
     if (pre !== null) {
       const codeEl = pre.querySelector('code') ?? pre;
       const blockStartLine = parseInt(anchor.dataset['line'] ?? '0', 10);
