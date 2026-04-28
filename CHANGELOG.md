@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.6.0](https://github.com/FrankLedo/markdown-pr-review/compare/v1.5.1...v1.6.0) (2026-04-28)
+
+
+### Features
+
+* add output channel logger utility ([9bb4f51](https://github.com/FrankLedo/markdown-pr-review/commit/9bb4f5163c6f6ab98863df4e38dcf622697db7ef))
+* anchor code fence comment bubbles to their specific line ([d1b50ff](https://github.com/FrankLedo/markdown-pr-review/commit/d1b50ff5f4353260b13c133aaccec68fbe6e8fd8))
+* diagram-anchors DOM queries and fallback chain ([de838fb](https://github.com/FrankLedo/markdown-pr-review/commit/de838fbdb5b9e5d932485cd2118aa4e31302d382))
+* diagram-anchors pure parser functions with tests ([19d4616](https://github.com/FrankLedo/markdown-pr-review/commit/19d4616246caf0a9ed823f3a3383337b9f7b6d0e))
+* expand all skips floating bubbles; floating threads get close button ([0c45c0f](https://github.com/FrankLedo/markdown-pr-review/commit/0c45c0f0b940d1dfbca3262b592568b62a4404b3))
+* overlay absolute positioning for diagram bubbles ([bf2adb0](https://github.com/FrankLedo/markdown-pr-review/commit/bf2adb0822970aadeb1f1bfaec7c132f608fe9f6))
+* popover CSS styles ([a860bb6](https://github.com/FrankLedo/markdown-pr-review/commit/a860bb6772ddcc9c607f54a6b046724c855c6c70))
+* thread popover placement mode ([fa09d59](https://github.com/FrankLedo/markdown-pr-review/commit/fa09d59ee3c15f60d3a4075e75dd63a5c99c6595))
+* use selected text to find exact source line when adding a comment ([5e9f966](https://github.com/FrankLedo/markdown-pr-review/commit/5e9f966b5f7c5578cf302ef165408440936ff091))
+* wire diagram anchor resolution into render pipeline ([80712ad](https://github.com/FrankLedo/markdown-pr-review/commit/80712ad8e4d507ac4dbf22ef5bfe55a64d7fd2e3))
+
+
+### Bug Fixes
+
+* clamp relLine at calculation point in resolveDiagramAnchors ([e2352f5](https://github.com/FrankLedo/markdown-pr-review/commit/e2352f57e37d304328834c2cbd369d8ae1970db8))
+* extractSequenceActor handles -x arrow and quoted participant names ([db1ccb7](https://github.com/FrankLedo/markdown-pr-review/commit/db1ccb7181868d60db4eb9c8ebc775255f35df1d))
+* extractSequenceActor returns full name for hyphenated participants ([aed5b4e](https://github.com/FrankLedo/markdown-pr-review/commit/aed5b4e90ec493c44dca85967db1244609c724bc))
+* popover arrow clamping, dismiss listener cleanup, left-edge guard ([487c811](https://github.com/FrankLedo/markdown-pr-review/commit/487c811bfbdf0600512390dbd1e1c04ab0fa1f66))
+* sequence message bubbles anchor to message height, not actor box ([b2d55d4](https://github.com/FrankLedo/markdown-pr-review/commit/b2d55d4e04d135d163b20870bb4953ee8ff9eb41))
+
 ## [1.5.1](https://github.com/FrankLedo/markdown-pr-review/compare/v1.5.0...v1.5.1) (2026-04-23)
 
 ### Bug Fixes

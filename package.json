@@ -2,7 +2,7 @@
   "name": "markdown-pr-review",
   "displayName": "Markdown PR Review",
   "description": "Read and review GitHub PR comments on rendered markdown — inline threads, Mermaid diagrams, full thread lifecycle",
-  "version": "1.5.1",
+  "version": "1.6.0",
   "publisher": "frankledo",
   "icon": "images/icon.png",
   "galleryBanner": {
