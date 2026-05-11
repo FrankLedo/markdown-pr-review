@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.1](https://github.com/FrankLedo/markdown-pr-review/compare/v1.6.0...v1.6.1) (2026-05-11)
+
+
+### Bug Fixes
+
+* strip HTML comments before rendering markdown ([1e47013](https://github.com/FrankLedo/markdown-pr-review/commit/1e47013f6352b3e8572d4c9fc02ca63a97c25451))
+
 ## [1.6.0](https://github.com/FrankLedo/markdown-pr-review/compare/v1.5.1...v1.6.0) (2026-04-28)
 
 
