@@ -40,7 +40,8 @@ function renderFrontMatter(content: string): string {
   return `<div class="pr-front-matter"><table>${rows}</table></div>\n`;
 }
 
-export function renderMarkdown(source: string): string {
+export function renderMarkdown(rawSource: string): string {
+  const source = rawSource.replace(/<!--[\s\S]*?-->/g, '');
   const md = new MarkdownIt({ html: false, linkify: true, breaks: false });
 
   md.block.ruler.before('hr', 'front_matter', frontMatterRule);
