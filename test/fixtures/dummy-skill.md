@@ -3,6 +3,7 @@ name: dummy-skill
 description: A fake skill used as a manual test fixture for front matter rendering
 type: feedback
 tags: testing, fixture
+version: 2
 ---
 
 # Dummy Skill
@@ -28,3 +29,9 @@ Include this file in a PR and use the extension to review it. Verify:
 
 A heading after front matter should be independently commentable.
 This paragraph is separate from the heading above.
+
+## New Section Added in PR
+
+This section was added in the PR branch. Lines here are in the diff and should show
+the normal blue add-comment button. Lines above (unchanged from main) should show the
+amber button when outside the diff context.
