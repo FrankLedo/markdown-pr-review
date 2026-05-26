@@ -42,6 +42,20 @@ function renderFrontMatter(content: string): string {
 
 export function renderMarkdown(rawSource: string): string {
   const source = rawSource.replace(/<!--[\s\S]*?-->/g, '');
+
+  // <details> blocks: markdown-it with html:false would escape the tags as literal text and
+  // expose all inner content. Extract them before rendering, reconstruct afterward so they
+  // become native collapsible widgets — matching GitHub / VSCode native preview behavior.
+  // Limitation: naïve regex doesn't handle nested <details>; that's an accepted edge case.
+  const detailsBlocks: Array<{ summary: string; inner: string }> = [];
+  const processedSource = source.replace(/<details>([\s\S]*?)<\/details>/gi, (_, body: string) => {
+    const summaryMatch = body.match(/^\s*<summary>([\s\S]*?)<\/summary>/i);
+    const summary = summaryMatch ? summaryMatch[1].trim() : '';
+    const inner = (summaryMatch ? body.slice(summaryMatch[0].length) : body).trim();
+    detailsBlocks.push({ summary, inner });
+    return `DETAILSBLOCK${detailsBlocks.length - 1}END`;
+  });
+
   const md = new MarkdownIt({ html: false, linkify: true, breaks: false });
 
   md.block.ruler.before('hr', 'front_matter', frontMatterRule);
@@ -88,7 +102,21 @@ export function renderMarkdown(rawSource: string): string {
     return self.renderToken(tokens, idx, options);
   };
 
-  return md.render(source);
+  let rendered = md.render(processedSource);
+
+  // Substitute placeholders back as native <details> elements; inner markdown re-rendered
+  // through the same md instance (html:false still applies, so no XSS surface added).
+  // The surrounding <p> may carry data-line — forward its attrs to <details>.
+  if (detailsBlocks.length > 0) {
+    rendered = rendered.replace(/<p([^>]*)>\s*DETAILSBLOCK(\d+)END\s*<\/p>\n?/g, (_, attrs: string, idxStr: string) => {
+      const { summary, inner } = detailsBlocks[parseInt(idxStr, 10)];
+      const summaryHtml = summary ? md.renderInline(summary) : '';
+      const innerHtml = inner ? md.render(inner) : '';
+      return `<details${attrs}><summary>${summaryHtml}</summary>${innerHtml}</details>\n`;
+    });
+  }
+
+  return rendered;
 }
 
 function escapeHtml(str: string): string {
