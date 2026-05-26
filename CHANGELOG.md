@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.2](https://github.com/FrankLedo/markdown-pr-review/compare/v1.6.1...v1.6.2) (2026-05-26)
+
+
+### Bug Fixes
+
+* render &lt;details&gt; blocks as native collapsible widgets ([3985bf7](https://github.com/FrankLedo/markdown-pr-review/commit/3985bf7701ac28858f909511424ffbd86738dd88))
+
 ## [1.6.1](https://github.com/FrankLedo/markdown-pr-review/compare/v1.6.0...v1.6.1) (2026-05-11)
 
 
