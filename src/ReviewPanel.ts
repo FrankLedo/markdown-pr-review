@@ -674,7 +674,7 @@ export class ReviewPanel {
 </head>
 <body>
   <div id="review-header"></div>
-  <div id="content"><p>Loading&#x2026;</p></div>
+  <div id="content" class="pr-content"><p>Loading&#x2026;</p></div>
   <script nonce="${nonce}" src="${mermaidUri}"></script>
   <script nonce="${nonce}" src="${scriptUri}"></script>
 </body>
