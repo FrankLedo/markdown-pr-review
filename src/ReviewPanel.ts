@@ -420,7 +420,7 @@ export class ReviewPanel {
       padding: 8px 12px; margin-bottom: 1em; font-size: 12px;
     }
     .pr-front-matter table { border-collapse: collapse; }
-    .pr-front-matter td { padding: 1px 8px 1px 0; vertical-align: top; }
+    .pr-front-matter table td { border: none; padding: 1px 8px 1px 0; vertical-align: top; }
     .fm-key { color: var(--vscode-symbolIcon-keywordForeground, #569cd6); font-weight: 600; white-space: nowrap; }
     .fm-val { color: var(--vscode-foreground, inherit); opacity: 0.85; }
     .pr-add-btn {
@@ -629,6 +629,40 @@ export class ReviewPanel {
       border: none !important;
     }
     .pr-bubble-cell .pr-bubble { float: none; margin-left: 0; }
+    .pr-content table {
+      border-collapse: collapse;
+      border-spacing: 0;
+      display: block;
+      overflow: auto;
+      width: max-content;
+      max-width: 100%;
+      margin: 1em 0;
+    }
+    .pr-content th,
+    .pr-content td {
+      border: 1px solid #d0d7de;
+      padding: 6px 13px;
+    }
+    .pr-content tr:nth-child(2n) {
+      background-color: #f6f8fa;
+    }
+    .pr-content thead tr {
+      background-color: transparent;
+    }
+    body.vscode-dark .pr-content th,
+    body.vscode-dark .pr-content td {
+      border-color: #30363d;
+    }
+    body.vscode-dark .pr-content tr:nth-child(2n) {
+      background-color: #161b22;
+    }
+    body.vscode-high-contrast .pr-content th,
+    body.vscode-high-contrast .pr-content td {
+      border-color: #30363d;
+    }
+    body.vscode-high-contrast .pr-content tr:nth-child(2n) {
+      background-color: #161b22;
+    }
     .pr-file-select {
       font-size: 12px;
       background: var(--vscode-dropdown-background, #3c3c3c);
