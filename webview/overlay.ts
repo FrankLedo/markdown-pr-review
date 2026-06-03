@@ -123,7 +123,9 @@ export function placeOverlays(
     if (!anchor) continue;
     const meta = threadMeta.find(m => m.rootCommentId === thread.rootId);
     const isDiagram = anchor.classList.contains('mermaid');
-    const pre = anchor.querySelector('pre');
+    const pre = anchor.tagName.toLowerCase() === 'pre'
+      ? anchor
+      : anchor.querySelector<HTMLElement>('pre');
     const bubble = createBubble(thread, meta, callbacks, isDiagram, isDiagram || pre !== null);
 
     if (isDiagram) {

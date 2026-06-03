@@ -372,6 +372,7 @@ export class ReviewPanel {
       margin: 6px 0;
       border-radius: 0 4px 4px 0;
       clear: both;
+      white-space: normal;
     }
     .pr-thread-close-btn {
       position: absolute;
