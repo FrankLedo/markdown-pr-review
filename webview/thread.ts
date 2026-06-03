@@ -184,6 +184,13 @@ function buildPanel(comments: PRComment[], threadId: number, options?: ThreadOpt
     panel.appendChild(banner);
   }
 
+  if (comments[0]?.outdated) {
+    const label = document.createElement('div');
+    label.className = 'pr-thread-outdated-label';
+    label.textContent = 'Outdated';
+    panel.appendChild(label);
+  }
+
   for (const comment of comments) {
     const item = document.createElement('div');
     item.className = 'pr-thread-item';

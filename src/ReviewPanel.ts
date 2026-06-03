@@ -513,6 +513,12 @@ export class ReviewPanel {
       margin-bottom: 8px;
       font-style: italic;
     }
+    .pr-thread-outdated-label {
+      font-size: 12px;
+      color: var(--vscode-gitDecoration-ignoredResourceForeground, #8a8a8a);
+      margin-bottom: 4px;
+      font-style: italic;
+    }
     .pr-thread-item { position: relative; }
     .pr-dot-menu-btn {
       position: absolute; top: 4px; right: 4px;
