@@ -3,6 +3,7 @@ export interface PRComment {
   node_id: string;
   in_reply_to_id?: number;
   line: number;
+  outdated?: boolean;
   body: string;
   user: { login: string; avatar_url: string };
   created_at: string;
