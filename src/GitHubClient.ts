@@ -63,6 +63,7 @@ interface GitHubReviewComment {
   in_reply_to_id?: number;
   path: string;
   line: number | null;
+  original_line?: number | null;
   body: string;
   user: { login: string; avatar_url: string };
   created_at: string;
@@ -85,14 +86,14 @@ export async function findPrNumber(
 }
 
 function mapComment(raw: GitHubReviewComment): PRComment {
-  if (raw.line == null) {
-    throw new Error(`mapComment: comment ${raw.id} has no line number`);
-  }
+  const line = raw.line ?? raw.original_line;
+  if (line == null) throw new Error(`mapComment: comment ${raw.id} has no line number`);
   return {
     id: raw.id,
     node_id: raw.node_id,
     in_reply_to_id: raw.in_reply_to_id,
-    line: raw.line,
+    line,
+    outdated: raw.line == null,
     body: raw.body,
     user: { login: raw.user.login, avatar_url: raw.user.avatar_url },
     created_at: raw.created_at,
@@ -150,13 +151,13 @@ export async function fetchPrCommentCounts(
   prNumber: number,
   token: string
 ): Promise<Record<string, number>> {
-  const raw = await githubRequest<Array<{ path: string; line: number | null }>>(
+  const raw = await githubRequest<Array<{ path: string; line: number | null; original_line?: number | null }>>(
     `/repos/${owner}/${repo}/pulls/${prNumber}/comments?per_page=100`,
     token
   );
   const counts: Record<string, number> = {};
   for (const c of raw) {
-    if (c.line != null) counts[c.path] = (counts[c.path] ?? 0) + 1;
+    if (c.line != null || c.original_line != null) counts[c.path] = (counts[c.path] ?? 0) + 1;
   }
   return counts;
 }
@@ -173,7 +174,7 @@ export async function fetchPrComments(
     token
   );
   return raw
-    .filter(c => c.path === filePath && c.line != null)
+    .filter(c => c.path === filePath && (c.line != null || c.original_line != null))
     .map(mapComment);
 }
 
