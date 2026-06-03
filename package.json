@@ -58,7 +58,7 @@
   "scripts": {
     "compile": "node esbuild.mjs",
     "watch": "node esbuild.mjs --watch",
-    "test": "npx tsx test/diagram-anchors.test.ts && npx tsx test/renderer-details.test.ts",
+    "test": "npx tsx test/diagram-anchors.test.ts && npx tsx test/renderer-details.test.ts && npx tsx test/renderer-tables.test.ts",
     "vscode:prepublish": "node esbuild.mjs --production",
     "postinstall": "node -e \"const {execSync}=require('child_process'),fs=require('fs'),p='node_modules/@esbuild/darwin-x64';if(!fs.existsSync(p)){execSync('npm pack @esbuild/darwin-x64@0.20.2',{stdio:'ignore'});fs.mkdirSync(p,{recursive:true});execSync('tar -xzf esbuild-darwin-x64-0.20.2.tgz -C '+p+' --strip-components=1');fs.unlinkSync('esbuild-darwin-x64-0.20.2.tgz')}\""
   },
