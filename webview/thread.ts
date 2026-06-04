@@ -365,7 +365,7 @@ export function toggleThread(
     return;
   }
 
-  const parent = bubble.closest('[data-line]') as HTMLElement | null;
+  const parent = (bubble.closest('[data-line]') ?? bubble.closest('pre')) as HTMLElement | null;
   if (!parent) return;
   if (!insertAfterInTable(parent, panel)) {
     parent.insertAdjacentElement('afterend', panel);
