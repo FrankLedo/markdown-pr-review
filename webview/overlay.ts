@@ -92,7 +92,7 @@ function createBubble(
     onUnresolve: callbacks?.onUnresolve,
     onEdit: callbacks?.onEdit,
     onDelete: callbacks?.onDelete,
-    placement: isDiagram ? 'popover' : 'inline',
+    placement: isFloating ? 'popover' : 'inline',
     showCloseButton: isFloating,
   };
   if (isFloating) bubble.classList.add('pr-bubble--floating');
