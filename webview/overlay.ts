@@ -125,7 +125,7 @@ export function placeOverlays(
     const isDiagram = anchor.classList.contains('mermaid');
     const pre = anchor.tagName.toLowerCase() === 'pre'
       ? anchor
-      : anchor.querySelector<HTMLElement>('pre');
+      : anchor.closest<HTMLElement>('pre') ?? anchor.querySelector<HTMLElement>('pre');
     const bubble = createBubble(thread, meta, callbacks, isDiagram, isDiagram || pre !== null);
 
     if (isDiagram) {
@@ -151,11 +151,11 @@ export function placeOverlays(
       const lineHeight = isNaN(rawLineHeight) ? 18 : rawLineHeight;
       const rawPaddingTop = parseFloat(getComputedStyle(pre).paddingTop);
       const paddingTop = isNaN(rawPaddingTop) ? 0 : rawPaddingTop;
-      anchor.style.position = 'relative';
+      pre.style.position = 'relative';
       bubble.style.position = 'absolute';
       bubble.style.right = '8px';
       bubble.style.top = `${paddingTop + relLine * lineHeight}px`;
-      anchor.appendChild(bubble);
+      pre.appendChild(bubble);
       continue;
     }
 
