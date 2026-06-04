@@ -693,6 +693,25 @@ export class ReviewPanel {
       overflow-y: auto;
       padding: 10px 12px;
     }
+    .pr-popover-drag {
+      height: 16px;
+      margin: -10px -12px 8px;
+      border-radius: 6px 6px 0 0;
+      background: var(--vscode-editorWidget-border, rgba(128,128,128,0.15));
+      cursor: grab;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      flex-shrink: 0;
+    }
+    .pr-popover-drag::before {
+      content: '···';
+      letter-spacing: 2px;
+      font-size: 11px;
+      color: var(--vscode-descriptionForeground, #888);
+    }
+    .pr-popover-drag:active { cursor: grabbing; }
     .pr-popover-arrow--left,
     .pr-popover-arrow--right {
       position: absolute;

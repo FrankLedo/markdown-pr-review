@@ -294,10 +294,35 @@ function showAsPopover(bubble: HTMLElement, panel: HTMLElement): void {
   const wrapper = document.createElement('div');
   wrapper.className = 'pr-popover';
 
+  const drag = document.createElement('div');
+  drag.className = 'pr-popover-drag';
+
   const arrow = document.createElement('div');
+  wrapper.appendChild(drag);
   wrapper.appendChild(arrow);
   wrapper.appendChild(panel);
   document.body.appendChild(wrapper);
+
+  // Drag-to-move
+  drag.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startLeft = parseInt(wrapper.style.left, 10);
+    const startTop = parseInt(wrapper.style.top, 10);
+
+    const onMove = (ev: MouseEvent): void => {
+      wrapper.style.left = `${startLeft + ev.clientX - startX}px`;
+      wrapper.style.top = `${startTop + ev.clientY - startY}px`;
+      arrow.className = '';  // hide arrow once dragged away from anchor
+    };
+    const onUp = (): void => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
 
   // Position after appending so getBoundingClientRect is accurate
   const bubbleRect = bubble.getBoundingClientRect();
