@@ -159,7 +159,9 @@ export function placeOverlays(
       continue;
     }
 
-    const tr = anchor.closest('tr') as HTMLElement | null;
+    const tr = (anchor.closest('tr') ??
+      (/^(TABLE|THEAD|TBODY|TFOOT)$/.test(anchor.tagName) ? anchor.querySelector('tr') : null)
+    ) as HTMLElement | null;
     if (tr) {
       const cell = document.createElement('td');
       cell.className = 'pr-bubble-cell';
