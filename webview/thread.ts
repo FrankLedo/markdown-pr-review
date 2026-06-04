@@ -297,10 +297,15 @@ function showAsPopover(bubble: HTMLElement, panel: HTMLElement): void {
   const drag = document.createElement('div');
   drag.className = 'pr-popover-drag';
 
+  const body = document.createElement('div');
+  body.className = 'pr-popover-body';
+
   const arrow = document.createElement('div');
+  body.appendChild(arrow);
+  body.appendChild(panel);
+
   wrapper.appendChild(drag);
-  wrapper.appendChild(arrow);
-  wrapper.appendChild(panel);
+  wrapper.appendChild(body);
   document.body.appendChild(wrapper);
 
   // Drag-to-move

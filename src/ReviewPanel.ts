@@ -690,12 +690,11 @@ export class ReviewPanel {
       max-width: 360px;
       min-width: 240px;
       max-height: 60vh;
-      overflow-y: auto;
-      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
     }
     .pr-popover-drag {
-      height: 16px;
-      margin: -10px -12px 8px;
+      height: 14px;
       border-radius: 6px 6px 0 0;
       background: var(--vscode-editorWidget-border, rgba(128,128,128,0.15));
       cursor: grab;
@@ -712,6 +711,10 @@ export class ReviewPanel {
       color: var(--vscode-descriptionForeground, #888);
     }
     .pr-popover-drag:active { cursor: grabbing; }
+    .pr-popover-body {
+      overflow-y: auto;
+      padding: 10px 12px;
+    }
     .pr-popover-arrow--left,
     .pr-popover-arrow--right {
       position: absolute;
