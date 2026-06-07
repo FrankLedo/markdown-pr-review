@@ -1,0 +1,43 @@
+name: Copilot re-review
+
+# GitHub's built-in "automatically request Copilot review" lives in a repository
+# *ruleset*, which is gated behind plan tiers (e.g. GitHub Pro on a private repo;
+# a Copilot subscription alone is not enough). This workflow reproduces the part
+# we care about — re-review on new commits — for free, using only the default
+# token's pull-requests:write permission.
+#
+# The first review stays a manual opt-in: request Copilot once on a PR, and
+# every push after that re-requests it automatically so the review reflects the
+# latest code. PRs Copilot has never reviewed are left untouched.
+
+on:
+  pull_request:
+    types: [synchronize]
+
+permissions:
+  pull-requests: write
+
+# Coalesce rapid pushes to the same PR so we don't queue redundant re-requests.
+concurrency:
+  group: copilot-rereview-${{ github.event.number }}
+  cancel-in-progress: true
+
+jobs:
+  rerequest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Re-request Copilot if it already reviewed this PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.number }}
+        run: |
+          reviewed=$(gh api "repos/$REPO/pulls/$PR/reviews" \
+            --jq 'any(.[]; .user.login == "copilot-pull-request-reviewer[bot]")')
+          if [ "$reviewed" = "true" ]; then
+            echo "Copilot has reviewed this PR before — re-requesting for the new commits."
+            gh api -X POST "repos/$REPO/pulls/$PR/requested_reviewers" \
+              -f 'reviewers[]=copilot-pull-request-reviewer[bot]'
+          else
+            echo "Copilot has not reviewed this PR — skipping (manual opt-in preserved)."
+          fi
