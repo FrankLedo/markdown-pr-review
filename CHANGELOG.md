@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.7.0](https://github.com/FrankLedo/markdown-pr-review/compare/v1.6.2...v1.7.0) (2026-06-07)
+
+
+### Features
+
+* add GitHub-style table CSS scoped to .pr-content (issue [#22](https://github.com/FrankLedo/markdown-pr-review/issues/22)) ([8e8f483](https://github.com/FrankLedo/markdown-pr-review/commit/8e8f48387fd8b09de210488d28b565d3fa824e29))
+* add pr-content class to content div for table style scoping ([63ef25d](https://github.com/FrankLedo/markdown-pr-review/commit/63ef25deaa3c9b81aac131c11723509e442e5f30))
+* draggable popover panels ([ccb0d2c](https://github.com/FrankLedo/markdown-pr-review/commit/ccb0d2c53773fa57503f7deb0a72c74954e89f0e))
+* show Outdated label on threads anchored to original_line (issue [#25](https://github.com/FrankLedo/markdown-pr-review/issues/25)) ([7a9f063](https://github.com/FrankLedo/markdown-pr-review/commit/7a9f0636e2eee6039b19db8402e994229ed6490c))
+
+
+### Bug Fixes
+
+* fall back to original_line for outdated PR comments (issue [#25](https://github.com/FrankLedo/markdown-pr-review/issues/25)) ([a4f68cc](https://github.com/FrankLedo/markdown-pr-review/commit/a4f68cca702c785d582f892311c3b96622f199aa))
+* find pre via closest() for fenced code block bubble anchoring ([9a556d1](https://github.com/FrankLedo/markdown-pr-review/commit/9a556d1071fcdd0921e678700927d212ce573f68))
+* open thread panel for code block bubbles ([81d5ade](https://github.com/FrankLedo/markdown-pr-review/commit/81d5ade9ff8109f0e9d37bf91ba679a18b8781c5))
+* restructure popover to fix drag handle layout ([1bd51d8](https://github.com/FrankLedo/markdown-pr-review/commit/1bd51d8645ce97a566bbf56382172f2bd1271be3))
+* show bubble for comments on first table row ([7c97fd0](https://github.com/FrankLedo/markdown-pr-review/commit/7c97fd06804a11d8032e1d400c94f251f501102f))
+* use popover for code block comment threads ([65d8ea5](https://github.com/FrankLedo/markdown-pr-review/commit/65d8ea564f456652a92a64e16cff0e97dcb61901))
+* wrap thread text inside code blocks; fix bubble anchor for pre elements ([ee1585e](https://github.com/FrankLedo/markdown-pr-review/commit/ee1585e53cc44fa0aeb195f2caa35b777dc210bc))
+
 ## [1.6.2](https://github.com/FrankLedo/markdown-pr-review/compare/v1.6.1...v1.6.2) (2026-05-26)
 
 
