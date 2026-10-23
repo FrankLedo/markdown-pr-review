@@ -4,10 +4,23 @@ This file is the permanent manual test fixture for the Markdown PR Review extens
 It covers every element type the renderer supports. Open a PR that modifies this file,
 then use that PR's number to spot-check comment anchoring for each section.
 
+## Contents
+
+- [Paragraphs](#paragraphs)
+- [Headings](#headings)
+- [Unordered List](#unordered-list)
+- [Ordered List](#ordered-list)
+- [Fenced Code Block](#fenced-code-block)
+- [Mermaid Diagram](#mermaid-diagram)
+- [Blockquote](#blockquote)
+- [Table](#table)
+- [Edge Cases](#edge-cases)
+
 ## Paragraphs
 
 This is the first test paragraph. Leave a review comment here to verify that basic
 paragraph anchoring works — the comment bubble should appear inline next to this text.
+It should remain anchored even after the PR diff is applied.
 
 This is a second paragraph immediately below. It should have its own independent
 comment anchor, separate from the paragraph above.
@@ -33,6 +46,7 @@ A deeper heading to verify that anchor depth doesn't affect comment placement.
   - Nested item — verify nested list anchoring
   - Another nested item
 - Third item
+- Fourth item — added in this PR
 
 ## Ordered List
 
@@ -104,6 +118,7 @@ Text after the blockquote, to confirm the blockquote and this paragraph get sepa
 | Draft batching | ✅ Done | Submit as one review |
 | File switcher | ✅ Done | Dropdown in header |
 | Mermaid support | ✅ Done | Anchors to specific node, edge, or message |
+| Scroll sync | 🚧 Planned | Phase 4 |
 
 ## Edge Cases
 
@@ -118,3 +133,5 @@ A paragraph followed immediately by a list:
 > Second blockquote line.
 
 Final paragraph with no trailing newline.
+
+An additional edge case paragraph added by this PR to verify that new content at end-of-file anchors correctly.
